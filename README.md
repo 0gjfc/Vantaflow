@@ -178,7 +178,7 @@ Every simulated screen carries a yellow **SIMULATED** tag, and every simulated a
 
 The GoldHEN panel (top-bar badge, or L1/R1 to the last section) shows a mock status indicator, version, uptime, plugins, tools and the GoldHEN feature list.
 
-**About the logo:** `assets/goldhen/goldhen-logo.png` is the official GoldHEN logo supplied by the project owner. It is used unaltered except that its white background was made transparent and the empty margin trimmed. It appears in the GoldHEN panel and the top-bar badge.
+**About the logo:** `assets/goldhen/goldhen-logo.png` is the official GoldHEN logo supplied by the project owner. Its white background was made transparent and, as the owner specified, a gold star was added on each side of the words in the logo's own face and shadow colours. The lettering itself is unchanged. It appears in the GoldHEN panel and the top-bar badge.
 
 ---
 

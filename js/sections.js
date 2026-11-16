@@ -346,7 +346,7 @@ const goldhenSection = {
     if (it.plugin) return `${hero}<h2>${esc(it.plugin.name)}</h2><p>${esc(it.plugin.desc)}</p>${kv([['State', it.plugin.enabled ? 'Enabled' : 'Disabled'], ['File', `/data/GoldHEN/plugins/${it.plugin.name}.prx`]])}<p class="note">←/→ or ✕ toggles the mock state.</p>`;
     if (it.id === 'about') {
       return `${hero}<h2>About GoldHEN</h2><p>GoldHEN is a PS4 homebrew enabler by SiSTRo. VantaFlow shows a mock status panel only; real GoldHEN integration is researched separately in a later stage.</p>
-        <p class="note">Logo: official GoldHEN logo, shown unaltered (white background made transparent).</p>`;
+        <p class="note">Logo: official GoldHEN wordmark with a gold star on each side, as specified by the project owner.</p>`;
     }
     return `${hero}<h2>${esc(it.title)}</h2><p>${esc(it.sub)}.</p>${cta('Open')}`;
   },

@@ -18,4 +18,4 @@ For an application or homebrew icon, use a square image (512 × 512) and an `ico
 
 ## GoldHEN logo — `assets/goldhen/goldhen-logo.png`
 
-The official GoldHEN logo, used in the GoldHEN panel and the top-bar badge. It came as a JPEG on white; the white was converted to transparency (colour-to-alpha, so the soft shadow keeps its edge) and the empty margin trimmed. The artwork itself is unchanged. To replace it, overwrite this file with another transparent PNG.
+The official GoldHEN logo, used in the GoldHEN panel and the top-bar badge. It came as a JPEG on white; the white was converted to transparency (colour-to-alpha, so the soft shadow keeps its edge) and the empty margin trimmed. As the owner specified, a gold star sits on each side of the words, drawn in the logo's own face (#E5D304) and extrusion (#B29800) colours. The lettering is unchanged. To replace it, overwrite this file with another transparent PNG.
