@@ -38,13 +38,13 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
 
   await check('every section opens and is highlighted (PS4 order)', async () => {
     const seen = [];
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 14; i++) {
       seen.push(await head(p));
       const active = await p.$$eval('.nav-btn.active', (els) => els.map((e) => e.dataset.id));
       assert.equal(active.length, 1);
       await keys(p, 'e');
     }
-    for (const name of ['flow:Games', 'flow:Applications', 'PlayStation Store', 'Settings', 'Trophies', 'Friends', 'Notifications', 'Media', 'File Manager', 'flow:Homebrew Applications', 'Power Options', 'GoldHEN', 'Player One']) assert.ok(seen.includes(name), name);
+    for (const name of ['flow:Games', 'flow:Applications', 'PlayStation Store', 'Settings', 'Trophies', 'Friends', 'Notifications', 'Media', 'File Manager', 'flow:Homebrew Applications', 'Power Options', 'GoldHEN', 'Player One', 'Consoles']) assert.ok(seen.includes(name), name);
     assert.ok(!seen.includes('etaHEN'));
     assert.equal(await head(p), 'flow:Games');
   });
@@ -177,43 +177,73 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     await press(4); // L1
   });
 
-  await check('PS5 switch: etaHEN, PS5 library, separate storage and files', async () => {
+  let ps4Accent;
+  await check('consoles page lists every mock console with its compatibility', async () => {
+    ps4Accent = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
     await p.click('#console-status');
-    await wait(p);
-    await keys(p, 'ArrowRight');
     await wait(p, 400);
-    assert.match(await p.textContent('#console-status'), /PS5/);
+    assert.equal(await head(p), 'Consoles');
+    const chips = await p.$$eval('.panel-list .compat', (els) => els.map((e) => e.textContent));
+    assert.equal(chips.length, 11);
+    for (const label of ['Compatible', 'Partially compatible', 'Unsupported', 'Unknown', 'Not detected']) assert.ok(chips.includes(label), label);
+    const detail = await p.textContent('.panel-detail');
+    for (const field of ['Connection', 'Generation', 'Model', 'Firmware', 'Homebrew', 'Last detection', 'Why', 'Supported features']) assert.ok(detail.includes(field), field);
+    await keys(p, 't'); // △ detect again
+    await wait(p, 400);
+    assert.match(await p.textContent('#toasts'), /Detection finished/);
+  });
+
+  await check('unknown device cannot become the active console', async () => {
+    await p.click('.row:has-text("Unidentified device")');
+    await p.click('.row:has-text("Unidentified device")');
+    await wait(p, 300);
+    assert.match(await p.textContent('#toasts'), /Cannot use this device/);
+    assert.match(await p.textContent('#console-status'), /PS4 Pro/);
+  });
+
+  await check('PS5 console: etaHEN, PS5 library, separate storage, files and settings', async () => {
+    await p.click('.row:has-text("Living room PS5")');
+    await p.click('.row:has-text("Living room PS5")');
+    await wait(p, 500);
+    assert.match(await p.textContent('#console-status'), /PS5 · FW 8\.20/);
     assert.equal(await p.getAttribute('#gh-badge', 'data-id'), 'etahen');
-    assert.match(await p.textContent('.panel-list'), /Internal SSD/);
+    assert.doesNotMatch(await p.textContent('#profile'), /Tester_01/); // PS5 profile has its own settings
+    assert.ok(await p.isHidden('#bg-image'));
     await p.click('#gh-badge');
     await wait(p);
     assert.equal(await head(p), 'etaHEN');
     assert.match(await p.textContent('.panel-detail'), /SIMULATED/);
+    assert.match(await p.textContent('.panel-detail'), /Compatible/);
     await p.click('.nav-btn[data-id="games"]');
     await wait(p);
     assert.match(await p.textContent('.flow-caption'), /17 installed/);
+    assert.match(await p.textContent('.storage'), /Internal SSD/);
     await p.click('.nav-btn[data-id="files"]');
     await keys(p, 'Enter');
     assert.match(await p.textContent('.panel-list'), /etaHEN/);
     assert.doesNotMatch(await p.textContent('.panel-list'), /GoldHEN/);
     const seen = [];
-    for (let i = 0; i < 13; i++) { seen.push(await head(p)); await keys(p, 'e'); }
+    for (let i = 0; i < 14; i++) { seen.push(await head(p)); await keys(p, 'e'); }
     assert.ok(seen.includes('etaHEN') && !seen.includes('GoldHEN'));
   });
 
   await check('no script errors during the whole run', async () => assert.deepEqual(errors, []));
 
-  await check('preferences survive a restart', async () => {
-    const accent = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+  await check('preferences survive a restart, per console profile', async () => {
     await p.close();
     const q = await ctx.newPage();
     await q.goto(URL);
     await wait(q, 1200);
-    assert.equal(await q.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()), accent);
-    assert.match(await q.textContent('#profile'), /Tester_01/);
-    assert.match(await q.textContent('#console-status'), /PS5/);
-    assert.ok(await q.isVisible('#bg-image'));
+    assert.match(await q.textContent('#console-status'), /PS5/); // PS5 profile still active
     assert.ok(await q.isHidden('.nav-btn[data-id="notifications"] .badge'));
+    // Back to the PS4 profile: its own name, accent and background are all still there.
+    await q.click('#console-status');
+    await q.click('.row:has-text("Living room PS4 Pro")');
+    await q.click('.row:has-text("Living room PS4 Pro")');
+    await wait(q, 500);
+    assert.match(await q.textContent('#profile'), /Tester_01/);
+    assert.equal(await q.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()), ps4Accent);
+    assert.ok(await q.isVisible('#bg-image'));
     // Restore default appearance: background image gone, Itemzflow Blue back.
     await keys(q, 'm');
     await q.click('.row:has-text("Restore default appearance")');
@@ -234,7 +264,7 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     await q.goto(URL);
     await wait(q, 1000);
     assert.equal(await q.textContent('#gh-badge .hen-text'), 'GoldHEN');
-    for (let i = 0; i < 14; i++) await keys(q, 'e'); // visit every section, incl. GoldHEN
+    for (let i = 0; i < 15; i++) await keys(q, 'e'); // visit every section, incl. GoldHEN
     await q.click('#gh-badge');
     await wait(q);
     assert.equal(await q.textContent('.gh-hero .hen-text'), 'GoldHEN');

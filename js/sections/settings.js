@@ -1,6 +1,6 @@
 // Settings section: appearance, interface, storage, console and system rows.
 // Every row except Storage changes the interface immediately and is saved locally.
-import { settings, set, CHOICES, PRESETS, SWATCHES, DEFAULTS, presetOf, getBgImage, setBgImage, resetAll } from '../core/settings.js';
+import { settings, set, CHOICES, PRESETS, SWATCHES, DEFAULTS, presetOf, getBgImage, setBgImage, resetAll, activeProfile, switchProfile, PROFILES } from '../core/settings.js';
 import { storageInfo } from '../platform/index.js';
 import { mod } from '../ui/carousel.js';
 import { esc, tag, bar, kv, toast, blip, confirmDialog } from '../ui/ui.js';
@@ -11,11 +11,12 @@ const LABELS = {
   sortBy: { name: 'Name', titleId: 'Title ID', recent: 'Recently played' },
   navLabels: { active: 'Active section only', always: 'Always' },
   coverSize: { itemzflow: 'Itemzflow (default)', large: 'Large' },
-  console: { ps4: 'PS4 Pro · GoldHEN', ps5: 'PS5 · etaHEN' },
 };
 
 // Storage category colours (chart only).
 const CAT_COLORS = { Games: 'var(--accent)', Applications: '#22b07d', 'Captures & media': '#d4a017', 'Saved data': '#8b5cf6', System: '#9aa4b2', Backups: '#e8508f', Music: '#00b4d8' };
+
+const PROFILE_LABEL = { ps4: 'PS4 · GoldHEN', ps5: 'PS5 · etaHEN' };
 
 let pending = null; // custom background shown in the preview, not yet applied
 
@@ -55,10 +56,13 @@ const ROWS = () => [
   { key: 'navLabels', type: 'choice', title: 'Navigation labels', desc: 'Show names under all top-bar icons, or only under the open section.' },
   { key: 'coverSize', type: 'choice', title: 'Cover size', desc: 'Itemzflow size is about 260 px wide at 1080p. Large is 25% bigger.' },
   { group: 'Storage (simulated)' },
-  ...storageInfo().map((d) => ({ id: 'storage', type: 'info', noAction: true, dev: d, title: d.name, sub: `${d.used.toFixed(1)} GB used of ${d.total} GB`,
-    valueHTML: `${bar((d.used / d.total) * 100)}<span class="val">${d.free.toFixed(1)} GB free</span>` })),
+  ...(storageInfo().length
+    ? storageInfo().map((d) => ({ id: 'storage', type: 'info', noAction: true, dev: d, title: d.name, sub: `${d.used.toFixed(1)} GB used of ${d.total} GB`,
+      valueHTML: `${bar((d.used / d.total) * 100)}<span class="val">${d.free.toFixed(1)} GB free</span>` }))
+    : [{ id: 'storage', type: 'info', noAction: true, dev: null, title: 'No storage information', sub: 'The active console is not connected' }]),
   { group: 'Console' },
-  { key: 'console', type: 'choice', title: 'Console', sim: true, desc: 'Demo console. PS4 shows GoldHEN, PS5 shows etaHEN; each has its own games, storage and firmware. Nothing is detected from real hardware.' },
+  { id: 'profile', type: 'profile', title: 'Console profile', sim: true, desc: 'PS4 and PS5 are separate profiles. Each keeps its own settings, favourites, background image and selected console; switching loads the other profile.' },
+  { id: 'consoles', type: 'action', title: 'Manage consoles…', desc: 'Connection, firmware, homebrew status and compatibility of each console, and which one is active.', run: (panel) => panel.app.goto('consoles') },
   { group: 'System' },
   { id: 'resetAll', type: 'action', title: 'Reset all settings', desc: 'Restores every option, colour, background and profile setting to the defaults.', run: resetEverything },
 ];
@@ -73,6 +77,7 @@ function display(r) {
     case 'color': return { valueHTML: `<span class="chip" style="background:${v}"></span><span class="val">${v.toUpperCase()}</span>`, text: v.toUpperCase() };
     case 'preset': { const p = PRESETS[presetOf(settings)]?.label ?? 'Custom'; return { value: p, text: p }; }
     case 'info': return {};
+    case 'profile': { const t = PROFILE_LABEL[activeProfile()]; return { valueHTML: `${sim}<span class="val">${t}</span>`, text: t }; }
     default: return { value: '›' };
   }
 }
@@ -91,6 +96,7 @@ function adjustSetting(r, dir) {
       set({ accent: PRESETS[k].accent, highlight: PRESETS[k].highlight });
       return true;
     }
+    case 'profile': switchProfile(PROFILES[mod(PROFILES.indexOf(activeProfile()) + dir, PROFILES.length)]); return true;
     default: return false;
   }
 }
@@ -176,6 +182,7 @@ function preview(r, panel) {
 }
 
 function storageDetail(d) {
+  if (!d) return `<h2>No storage information ${tag('sim')}</h2><p>The active console is not connected, so its drives cannot be read. Pick a connected console in Consoles.</p>`;
   const seg = (name, size) => `<i style="width:${(size / d.total) * 100}%;background:${CAT_COLORS[name] || '#888'}" title="${esc(name)}"></i>`;
   return `<h2>${esc(d.name)} ${tag('sim')}</h2>
     <div class="stack">${d.cats.map((c) => seg(c.name, c.size)).join('')}</div>

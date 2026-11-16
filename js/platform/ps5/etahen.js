@@ -1,4 +1,5 @@
-// etaHEN (PS5 homebrew enabler) — demonstration status only. Nothing here talks to a console.
+// etaHEN (PS5 homebrew enabler) — demo panel content (plugins, tools, files).
+// Live status, version and compatibility come from detection: see platform/index.js.
 const f = (name, size) => ({ name, size, modified: '2026-11-02' });
 
 export default {
@@ -6,9 +7,6 @@ export default {
   name: 'etaHEN',
   platform: 'ps5',
   logo: 'assets/etahen/etahen-logo.png',
-  status: 'Active',
-  version: '2.0 (mock)',
-  since: 'Boot + 01:07:55',
   about: 'etaHEN is a PS5 homebrew enabler by LightningMods and contributors.',
   dir: 'etaHEN', // under /data
   features: ['Homebrew Enabler', 'Debug Settings', 'FTP Server', 'Cheats', 'Plugin Loader', 'Toolbox Menu'],

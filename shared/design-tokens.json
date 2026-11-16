@@ -1,0 +1,19 @@
+{
+  "note": "Shared visual tokens for the desktop app (css/vantaflow.css :root) and the Android companion. tests/compat.test.mjs checks the desktop CSS still matches.",
+  "color": {
+    "accent": "#1d86f0",
+    "highlight": "#1d86f0",
+    "background": "#1f1f1f",
+    "panelGrey": "#424242",
+    "text": "#ffffff",
+    "status": {
+      "compatible": "#3ecf6e",
+      "partial": "#f0b429",
+      "unsupported": "#e0434f",
+      "unknown": "#9aa4b2",
+      "not-detected": "#8a8a8a"
+    }
+  },
+  "font": { "family": "Helvetica Neue, Helvetica, Arial, Noto Sans, sans-serif" },
+  "motion": { "coverStepSeconds": 0.1976 }
+}

@@ -3,7 +3,7 @@
 // Anything that would need a console is labelled SIMULATED and only shows what would happen.
 import { store, trophyNames, friends, notifications, media, buildFileTree, resolvePath, powerOptions, profile } from '../data/mock.js';
 import { titles } from '../data/library.js';
-import { platform } from '../platform/index.js';
+import { platform, platformOf, activeDetection } from '../platform/index.js';
 import { settings, set, SWATCHES, USERNAME } from '../core/settings.js';
 import { load, save } from '../core/store.js';
 import { coverArt } from '../ui/art.js';
@@ -29,7 +29,8 @@ export const profileSection = {
     { id: 'signout', title: 'Sign out', icon: 'power', valueHTML: '<span class="mini-sim">SIM</span>' },
   ],
   detail(it) {
-    const p = platform();
+    const d = activeDetection();
+    const model = platformOf(d?.console.generation)?.models.find((m) => m.id === d.console.model);
     const notes = {
       name: '✕ edits the name shown in the top bar. 1–16 letters, numbers, spaces, _ . or -.',
       avatar: '←/→ or ✕ changes the avatar colour.',
@@ -40,7 +41,7 @@ export const profileSection = {
     };
     return `<div class="person"><div class="avatar xl">${esc(settings.username[0])}<i class="dot ${PRESENCE[settings.presence][0]}"></i></div>
       <div><h2>${esc(settings.username)}</h2><div class="status-line">Level ${profile.level} · ${esc(PRESENCE[settings.presence][1])}</div></div></div>
-      ${kv([['Console', `${p.model} (simulated)`], ['Firmware', `${p.firmware} (simulated)`], ['Trophies', String(trophyTotals())], ['Saved', 'Name, colour and status are stored on this device']])}
+      ${kv([['Console', `${model?.name ?? 'Not identified'} (simulated)`], ['Firmware', `${d?.firmware.version ?? 'unknown'} (simulated)`], ['Profile', platform().name], ['Trophies', String(trophyTotals())], ['Saved', 'Name, colour and status are stored per console profile']])}
       <p class="note">${esc(notes[it.id])}</p>`;
   },
   adjust(it, dir) {
@@ -157,7 +158,7 @@ export const filesSection = {
         <ul class="plain">${it.node.children.slice(0, 6).map((c) => `<li>${icon(c.children ? 'folder' : 'file')} ${esc(c.name)}</li>`).join('')}</ul>`;
     }
     return `<div class="media-hero">${icon('file')}</div><h2>${esc(it.node.name)}</h2>${kv([['Path', full], ['Size', it.node.size || '—'], ['Modified', it.node.modified]])}
-      <p class="note">Demonstration file system of the ${esc(platform().model)}. Files cannot be opened, moved or deleted.</p>`;
+      <p class="note">Demonstration file system of the ${esc(platform().name)} profile. Files cannot be opened, moved or deleted.</p>`;
   },
   activate(it, panel) {
     if (it.up) goUp(panel);

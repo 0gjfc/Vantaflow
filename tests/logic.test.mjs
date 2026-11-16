@@ -23,8 +23,7 @@ assert.equal(s.bgDim, DEFAULTS.bgDim);
 assert.equal(s.wrap, DEFAULTS.wrap);
 assert.ok(!('evil' in s));
 assert.deepEqual(sanitize(null), { ...DEFAULTS });
-assert.equal(sanitize({ console: 'ps5' }).console, 'ps5');
-assert.equal(sanitize({ console: 'ps6' }).console, 'ps4');
+assert.ok(!('console' in sanitize({ console: 'ps5' }))); // the console is a profile now, not a setting
 assert.equal(sanitize({ username: 'Kai_99' }).username, 'Kai_99');
 assert.equal(sanitize({ username: '<script>' }).username, DEFAULTS.username);
 assert.equal(sanitize({ username: 'x'.repeat(17) }).username, DEFAULTS.username);

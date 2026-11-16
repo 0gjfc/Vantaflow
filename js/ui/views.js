@@ -5,7 +5,7 @@ import { Coverflow } from './carousel.js';
 import { coverArt } from './art.js';
 import { formatPlayed } from '../data/library.js';
 import { storageInfo } from '../platform/index.js';
-import { settings, toggleFavorite } from '../core/settings.js';
+import { activeProfile, toggleFavorite } from '../core/settings.js';
 import { esc, icon, btn, tag, blip, toast, simulated, confirmDialog, showSplash } from './ui.js';
 
 // Game-page options, as in Itemzflow's ITEM_PAGE (trimmed to what makes sense in Stage 1).
@@ -67,7 +67,9 @@ export class FlowView {
   }
 
   renderStorage() {
-    this.root.querySelector('.storage').innerHTML = storageInfo().map((d) => `<div><b>${esc(d.name)}</b> <span class="mock">MOCK</span>
+    const drives = storageInfo();
+    if (!drives.length) { this.root.querySelector('.storage').innerHTML = '<div><b>Storage</b> <span class="mock">MOCK</span><div class="bar"></div>Console not connected</div>'; return; }
+    this.root.querySelector('.storage').innerHTML = drives.map((d) => `<div><b>${esc(d.name)}</b> <span class="mock">MOCK</span>
       <div class="bar"><i style="width:${(d.used / d.total) * 100}%"></i></div>${d.free.toFixed(1)} GB free of ${d.total} GB</div>`).join('');
   }
 
@@ -86,7 +88,7 @@ export class FlowView {
     if (!it) { info.innerHTML = '<h2>Nothing installed</h2>'; return; }
     this.lastId[this.section.id] = it.id;
     info.innerHTML = `<h2>${it.fav ? '<span class="heart">♥</span> ' : ''}${esc(it.title)}</h2>
-      <div class="meta"><span class="tid">${esc(it.id)} · </span>${esc(it.type)} (${esc(it.version)})${it.platform === 'ps4' && settings.console === 'ps5' ? ' · PS4 title' : ''}</div>
+      <div class="meta"><span class="tid">${esc(it.id)} · </span>${esc(it.type)} (${esc(it.version)})${it.platform === 'ps4' && activeProfile() === 'ps5' ? ' · PS4 title' : ''}</div>
       <div class="desc">${esc(it.desc)}</div>
       <button class="select">${btn('cross')}<span>Select</span></button>`;
     this.app.updatePrompts();

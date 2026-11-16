@@ -5,6 +5,7 @@ import { titles, sortItems } from '../data/library.js';
 import { profileSection, storeSection, trophySection, friendsSection, notificationsSection, mediaSection, filesSection, powerSection } from './content.js';
 import { settingsSection } from './settings.js';
 import { goldhenSection, etahenSection } from './hen.js';
+import { consolesSection } from './consoles.js';
 
 const withFav = (it) => ({ ...it, fav: favorites.has(it.id) });
 
@@ -20,6 +21,7 @@ export const SECTIONS = [
   flow('apps', 'Applications', 'Apps', 'apps', 'square', 'apps'),
   storeSection,
   settingsSection,
+  consolesSection,
   trophySection,
   friendsSection,
   notificationsSection,

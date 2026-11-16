@@ -1,4 +1,5 @@
-// GoldHEN (PS4 homebrew enabler) — demonstration status only. Nothing here talks to a console.
+// GoldHEN (PS4 homebrew enabler) — demo panel content (plugins, tools, files).
+// Live status, version and compatibility come from detection: see platform/index.js.
 const f = (name, size) => ({ name, size, modified: '2026-10-12' });
 
 export default {
@@ -6,9 +7,6 @@ export default {
   name: 'GoldHEN',
   platform: 'ps4',
   logo: 'assets/goldhen/goldhen-logo.png',
-  status: 'Active',
-  version: '2.4 (mock)',
-  since: 'Boot + 00:42:13',
   about: 'GoldHEN is a PS4 homebrew enabler by SiSTRo.',
   dir: 'GoldHEN', // under /data
   features: ['Homebrew Enabler', 'Debug Settings', 'Remote Package Install', 'Rest Mode Support', 'External HDD Support', 'Cheat & Patch Engine', 'Plugin Loader'],

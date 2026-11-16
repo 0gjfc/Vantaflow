@@ -1,0 +1,54 @@
+{
+  "lastVerified": "2026-11-16",
+  "levels": {
+    "official": "Built into the system software by Sony.",
+    "homebrew": "Documented by a homebrew project (GoldHEN, etaHEN, Itemzflow). Needs that homebrew environment.",
+    "experimental": "Documented, but marked experimental, untested or limited to some versions.",
+    "unsupported": "No documented method found in the researched sources."
+  },
+  "terms": {
+    "theme": "Changes the look the system offers to change: wallpaper, colours, sounds. The system home screen stays the same program.",
+    "overlay": "Draws extra information on top of the system or a game (FPS counter, Title ID labels, cheat menu). Nothing underneath is replaced.",
+    "homebrew-app": "A separate application, like Itemzflow or VantaFlow on a console, that you open from the home screen. It can look like a dashboard, but the system home screen keeps running behind it.",
+    "home-redirect": "A homebrew option that opens a homebrew app when the home screen would normally appear (Itemzflow 'Home_Redirection', etaHEN 'StartOption'). The system shell still runs underneath; it is not replaced.",
+    "shell-replacement": "Swapping the system home screen program (the shell) for another one. No documented method was found for PS4 or PS5, so VantaFlow does not claim it."
+  },
+  "sources": {
+    "ps4-450": { "label": "PlayStation Blog EU: PS4 system software 4.50 (custom wallpaper from screenshots)", "url": "https://blog.eu.playstation.com/2017/03/08/ps4-system-software-update-4-50-is-out-tomorrow-heres-everything-you-need-to-know" },
+    "ps4-550": { "label": "PlayStation Blog EU: PS4 custom wallpapers via USB (5.50)", "url": "https://blog.eu.playstation.com/2018/03/08/how-to-create-your-own-ps4-custom-wallpapers-via-usb-in-8-easy-steps/" },
+    "ps5-retro": { "label": "Push Square: PS5 home screen PS1–PS4 looks for the 30th anniversary (secondary source)", "url": "https://pushsquare.com/news/2024/12/ps5-home-screen-customisable-with-ps1-ps2-ps3-and-ps4-themes-for-the-30th-anniversary" },
+    "ps5-retro-return": { "label": "TweakTown: retro PS5 looks brought back (secondary source)", "url": "https://www.tweaktown.com/news/104757/sony-listens-to-fans-adds-retro-custom-themes-to-ps5/index.html" },
+    "ps5-animated": { "label": "OpenCritic: animated PS5 themes appearing without announcement (secondary source)", "url": "https://opencritic.com/news/15195/sony-silently-adds-animated-ps5-themes-featuring-ghost-of-yotei-and-more" },
+    "ps5-no-wallpaper": { "label": "Addictive Tips: PS5 has no custom home-screen wallpaper (secondary source)", "url": "https://addictivetips.com/gaming/ps5-themes" },
+    "goldhen": { "label": "GoldHEN README and release notes", "url": "https://github.com/GoldHEN/GoldHEN" },
+    "etahen": { "label": "etaHEN README (features, config.ini)", "url": "https://github.com/etaHEN/etaHEN/blob/main/README.md" },
+    "itemzflow": { "label": "Itemzflow README (settings, themes)", "url": "https://github.com/LightningMods/Itemzflow/blob/main/README.md" },
+    "itemzflow-lang": { "label": "Itemzflow lang.ini (app options)", "url": "https://github.com/LightningMods/Itemzflow/blob/main/itemzflow/lang.ini" }
+  },
+  "ps4": [
+    { "area": "backgrounds", "level": "official", "text": "Themes and a custom wallpaper: from screenshots since system software 4.50, from images on USB since 5.50 (Settings > Themes > Custom).", "sources": ["ps4-450", "ps4-550"] },
+    { "area": "backgrounds", "level": "homebrew", "text": "Inside Itemzflow: background image, animated shader background, background music, fonts and button images through Itemzflow themes. Only Itemzflow changes; the system home screen does not.", "sources": ["itemzflow"] },
+    { "area": "game-artwork", "level": "homebrew", "text": "Itemzflow downloads and shows box-art covers in its own library view.", "sources": ["itemzflow"] },
+    { "area": "library", "level": "homebrew", "text": "Itemzflow coverflow library with sorting, categories and reflections, as a separate app.", "sources": ["itemzflow"] },
+    { "area": "applications", "level": "homebrew", "text": "Itemzflow can change an app's icon or name and hide apps by editing the system app database (app.db). VantaFlow does not do this; it changes system files.", "sources": ["itemzflow-lang"] },
+    { "area": "home-screen", "level": "homebrew", "text": "Itemzflow 'Home_Redirection' opens Itemzflow instead of the home screen. This is a redirect, not a shell replacement.", "sources": ["itemzflow"] },
+    { "area": "overlays", "level": "homebrew", "text": "GoldHEN overlays: FPS counter, Title ID labels and scanlines (2.3+), game SysInfo overlay (2.4b17+).", "sources": ["goldhen"] },
+    { "area": "menus", "level": "experimental", "text": "GoldHEN Cheat Menu, marked experimental in its release notes.", "sources": ["goldhen"] },
+    { "area": "home-screen", "level": "experimental", "text": "GoldHEN 2.4b18 known issue: Itemzflow, Apollo and Orbis Toolbox may crash the PS4 when entering or leaving rest mode.", "sources": ["goldhen"] },
+    { "area": "home-screen", "level": "unsupported", "text": "Replacing the PS4 home screen (system shell) with another program: no documented method found.", "sources": [] },
+    { "area": "profile", "level": "unsupported", "text": "Profile appearance was not researched for PS4 in this stage; no claim is made.", "sources": [] }
+  ],
+  "ps5": [
+    { "area": "backgrounds", "level": "official", "text": "The home screen background follows the highlighted game; custom wallpapers are not offered (secondary sources).", "sources": ["ps5-no-wallpaper"] },
+    { "area": "home-screen", "level": "official", "text": "Sony added PS1–PS4 style looks for the home screen in December 2024 (30th anniversary) and later brought them back; animated themes were reported in 2025 without an announcement. Availability depends on system version and rollout (secondary sources).", "sources": ["ps5-retro", "ps5-retro-return", "ps5-animated"] },
+    { "area": "profile", "level": "official", "text": "Profile cover image and avatar can be changed; this does not change the home screen (secondary source).", "sources": ["ps5-no-wallpaper"] },
+    { "area": "home-screen", "level": "homebrew", "text": "etaHEN: Title IDs on the home menu, custom debug settings text and icon, custom System Software version text.", "sources": ["etahen"] },
+    { "area": "overlays", "level": "homebrew", "text": "etaHEN game overlay showing CPU, GPU, RAM and IP.", "sources": ["etahen"] },
+    { "area": "menus", "level": "homebrew", "text": "etaHEN toolbox menus and controller shortcuts, including a system-wide shortcut to open Itemzflow.", "sources": ["etahen"] },
+    { "area": "home-screen", "level": "homebrew", "text": "etaHEN 'StartOption' and 'launch_itemzflow' can open Itemzflow after etaHEN loads. This is a redirect, not a shell replacement.", "sources": ["etahen"] },
+    { "area": "library", "level": "homebrew", "text": "Itemzflow runs on PS5 with its own library view; its README links a PS5 game compatibility list.", "sources": ["itemzflow"] },
+    { "area": "menus", "level": "experimental", "text": "etaHEN cheats menu is marked WIP; etaHEN 2.3B toolbox support on 8.40, 8.60 and 9.xx is marked untested.", "sources": ["etahen"] },
+    { "area": "backgrounds", "level": "unsupported", "text": "Custom home-screen wallpaper through homebrew: no documented method found.", "sources": [] },
+    { "area": "home-screen", "level": "unsupported", "text": "Replacing the PS5 home screen (system shell) with another program: no documented method found.", "sources": [] }
+  ]
+}

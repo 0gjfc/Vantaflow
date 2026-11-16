@@ -1,4 +1,6 @@
 // User preferences: defaults, validation, change events. Persisted through core/store.js.
+// PS4 and PS5 are separate profiles: each keeps its own settings, favourites, background image
+// and selected console, so switching consoles never mixes them.
 // Pure functions (sanitize, presetOf) are DOM-free so tests can import this in Node.
 import { load, save } from './store.js';
 
@@ -20,7 +22,6 @@ export const DEFAULTS = Object.freeze({
   uiSounds: true, volume: 50, music: false,
   wrap: true, swapConfirm: false, showPrompts: true, sortBy: 'name',
   clock24: true, showTitleIds: true, navLabels: 'active', coverSize: 'itemzflow',
-  console: 'ps4',
   username: 'Player One', avatarColor: '#1d86f0', presence: 'online',
 });
 
@@ -30,7 +31,6 @@ export const CHOICES = {
   sortBy: ['name', 'titleId', 'recent'],
   navLabels: ['active', 'always'],
   coverSize: ['itemzflow', 'large'],
-  console: ['ps4', 'ps5'],
   presence: ['online', 'away', 'offline'],
 };
 
@@ -64,28 +64,56 @@ export function presetOf(s) {
   return hit ? hit[0] : 'custom';
 }
 
-export const settings = sanitize(load('settings.v1'));
+export const PROFILES = ['ps4', 'ps5'];
+
+// Stage 2 kept one settings object with a `console` field; it seeds both profiles once.
+const legacy = load('settings.v1');
+let profile = PROFILES.includes(load('profile.active')) ? load('profile.active') : (PROFILES.includes(legacy?.console) ? legacy.console : 'ps4');
+const loadProfile = (id) => sanitize(load(`settings.${id}`) ?? legacy);
+
+export const activeProfile = () => profile;
+export const settings = loadProfile(profile);
 const listeners = new Set();
 
 export const onChange = (fn) => listeners.add(fn);
+const emit = (patch) => listeners.forEach((fn) => fn(settings, patch));
 
 export function set(patch) {
   Object.assign(settings, sanitize({ ...settings, ...patch }));
-  save('settings.v1', settings);
-  listeners.forEach((fn) => fn(settings, patch));
+  save(`settings.${profile}`, settings);
+  emit(patch);
+}
+
+// Switch to the other console profile. Listeners get `profile` in the patch.
+export function switchProfile(id) {
+  if (!PROFILES.includes(id) || id === profile) return;
+  save(`settings.${profile}`, settings);
+  profile = id;
+  save('profile.active', id);
+  Object.assign(settings, loadProfile(id));
+  favorites.clear();
+  loadFavorites().forEach((f) => favorites.add(f));
+  emit({ ...settings, profile: id });
 }
 
 export const resetAll = () => { setBgImage(null); set({ ...DEFAULTS }); };
 
-// Custom background (data URL). Returns false when it does not fit in storage.
-export const getBgImage = () => load('background.v2');
-export const setBgImage = (dataUrl) => save('background.v2', dataUrl);
+// Custom background (data URL), per profile. Returns false when it does not fit in storage.
+export const getBgImage = () => load(`background.${profile}`);
+export const setBgImage = (dataUrl) => save(`background.${profile}`, dataUrl);
 
-// Favourite title ids.
-const savedFavs = load('favorites.v1', []);
-export const favorites = new Set(Array.isArray(savedFavs) ? savedFavs : []);
+// Favourite title ids, per profile.
+function loadFavorites() {
+  const saved = load(`favorites.${profile}`, load('favorites.v1', []));
+  return Array.isArray(saved) ? saved : [];
+}
+export const favorites = new Set(loadFavorites());
 export function toggleFavorite(id) {
   if (!favorites.delete(id)) favorites.add(id);
-  save('favorites.v1', [...favorites]);
+  save(`favorites.${profile}`, [...favorites]);
   return favorites.has(id);
 }
+
+// Selected console per profile (an id from the detection provider).
+export const selectedConsole = (id = profile) => load(`console.${id}`);
+export const setSelectedConsole = (id, consoleId) => save(`console.${id}`, consoleId);

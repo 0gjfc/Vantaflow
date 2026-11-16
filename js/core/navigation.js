@@ -3,9 +3,9 @@
 import { SECTIONS } from '../sections/index.js';
 import { unreadCount } from '../sections/content.js';
 import { FlowView, PanelView } from '../ui/views.js';
-import { settings, onChange } from './settings.js';
+import { settings, onChange, activeProfile } from './settings.js';
 import { flowConfig, bgSnapshot } from './appearance.js';
-import { platform, henLogo } from '../platform/index.js';
+import { platform, platformOf, henLogo, activeDetection, activeConsoleId, compatibilityOf } from '../platform/index.js';
 import { loadLibrary } from '../data/library.js';
 import { profile } from '../data/mock.js';
 import { esc, icon, btn, blip, toast, dialogHandle, splashHandle, wakeAudio } from '../ui/ui.js';
@@ -18,7 +18,7 @@ const CLICKABLE = new Set(['cross', 'circle', 'square', 'triangle', 'options']);
 
 // ←/→ in the nav bar and L1/R1 visit: profile, the 11 main sections, then the homebrew
 // enabler of the active console only (GoldHEN on PS4, etaHEN on PS5).
-const order = () => SECTIONS.filter((s) => !s.platform || s.platform === settings.console).map((s) => s.id);
+const order = () => SECTIONS.filter((s) => !s.platform || s.platform === activeProfile()).map((s) => s.id);
 
 let current = 'games';
 let focus = 'content'; // 'content' | 'nav'
@@ -40,7 +40,7 @@ const app = {
     panel.render();
   },
   async reloadLibrary() {
-    await loadLibrary(settings.console);
+    await loadLibrary(activeProfile());
     if (byId[current].view === 'flow') flow.show(byId[current]);
     toast('Library reloaded', 'Demo titles — a later stage reads them from the console.', 'info');
   },
@@ -54,16 +54,23 @@ function put(el, html) {
   el.innerHTML = html;
 }
 
+const STATUS_DOT = { compatible: 'ok', partial: 'away', unsupported: 'bad', unknown: 'off', 'not-detected': 'off' };
+const HEN_DOT = (e) => (e.state === 'active' && e.verified ? 'ok' : e.state === 'absent' ? 'off' : 'away');
+
 function refreshChrome() {
   const p = platform();
+  const d = activeDetection();
+  const c = compatibilityOf(activeConsoleId());
+  const model = platformOf(d?.console.generation)?.models.find((m) => m.id === d.console.model);
   put($('#profile'), `<span class="avatar">${esc(settings.username[0])}<i class="dot ${PRESENCE_DOT[settings.presence]}"></i></span>
     <span class="who">${esc(settings.username)}<small>Level ${profile.level}</small></span>`);
   const hb = $('#gh-badge');
   hb.dataset.id = p.hen.id;
   hb.title = `${p.hen.name} — simulated status`;
   hb.setAttribute('aria-label', p.hen.name);
-  put(hb, `${henLogo(p.hen, 'gh-mini-img')}<span class="dot ok"></span>`);
-  put($('#console-status'), `<span class="dot ok"></span>${esc(p.model)} · FW ${esc(p.firmware)} <span class="mock">MOCK</span>`);
+  put(hb, `${henLogo(p.hen, 'gh-mini-img')}<span class="dot ${d ? HEN_DOT(d.environment) : 'off'}"></span>`);
+  const fw = d?.connection.state === 'connected' ? `FW ${esc(d.firmware.version ?? '?')}` : 'Not connected';
+  put($('#console-status'), `<span class="dot ${STATUS_DOT[c.status]}" title="${esc(c.label)}"></span>${esc(model?.short ?? 'Unknown console')} · ${fw} <span class="mock">MOCK</span>`);
   const unread = unreadCount();
   const badge = $('.nav-btn[data-id="notifications"] .badge');
   badge.textContent = unread || '';
@@ -125,10 +132,10 @@ export function dispatch(action) {
 
 // Structural reactions to settings changes (appearance.js handles the visual ones).
 onChange(async (_, patch) => {
-  if ('console' in patch) {
-    await loadLibrary(settings.console);
-    if (byId[current].platform && byId[current].platform !== settings.console) goto('games');
-    else if (byId[current].view === 'panel') panel.render();
+  if ('profile' in patch) { // PS4 ⇄ PS5: other library, other HEN section, other settings
+    await loadLibrary(activeProfile());
+    if (byId[current].platform && byId[current].platform !== activeProfile()) goto('games');
+    else view().show(byId[current]);
   }
   if ('sortBy' in patch && byId[current].view === 'flow') flow.show(byId[current]);
   if ('wrap' in patch || 'coverSize' in patch) flow.cf.refresh();
@@ -143,7 +150,7 @@ export function initNavigation() {
   $('#nav').innerHTML = SECTIONS.filter((s) => s.id !== 'profile' && !s.platform).map((s) => `<button class="nav-btn" data-id="${s.id}" title="${esc(s.label)}" aria-label="${esc(s.label)}">
     ${icon(s.icon)}<span class="lbl">${esc(s.short || s.label)}</span>${s.id === 'notifications' ? '<span class="badge"></span>' : ''}</button>`).join('');
   document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => { goto(b.dataset.id); setFocus('content'); }));
-  $('#console-status').addEventListener('click', () => app.openSettingsAt((r) => r.key === 'console'));
+  $('#console-status').addEventListener('click', () => { goto('consoles'); setFocus('content'); });
   $('#prompts').addEventListener('click', (e) => { const b = e.target.closest('[data-action]'); if (b) dispatch(b.dataset.action); });
   setInterval(tickClock, 5000);
   tickClock();

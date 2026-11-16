@@ -1,0 +1,125 @@
+{
+  "environment": "etahen",
+  "name": "etaHEN",
+  "platform": "ps5",
+  "author": "LightningMods and contributors",
+  "lastVerified": "2026-11-16",
+  "firmwareListComplete": false,
+  "firmwareListNote": "etaHEN release notes only mention firmware that a release adds, fixes or tests. No release publishes a complete supported-firmware list, so a firmware that a release does not mention is treated as unknown for that release, never as supported.",
+  "readmeDescribes": "2.5B",
+  "loading": "etaHEN is a payload that a separate PS5 exploit and ELF loader load on the console. VantaFlow never performs or automates that step.",
+  "sources": [
+    { "label": "etaHEN releases (release notes)", "url": "https://github.com/etaHEN/etaHEN/releases" },
+    { "label": "etaHEN README (features, config.ini)", "url": "https://github.com/etaHEN/etaHEN/blob/main/README.md" },
+    { "label": "Release dates from the repository's git tags", "url": "https://github.com/etaHEN/etaHEN/tags" }
+  ],
+  "features": [
+    { "id": "toolbox", "label": "etaHEN toolbox (debug settings replacement)", "since": null },
+    { "id": "plugins", "label": "Custom etaHEN plugins", "since": null },
+    { "id": "hb-store", "label": "Install the Homebrew Store (toolbox)", "since": null },
+    { "id": "rest-mode", "label": "Rest mode options (toolbox)", "since": null },
+    { "id": "remote-play", "label": "Remote Play menu (toolbox)", "since": null },
+    { "id": "external-hdd", "label": "External HDD menu (toolbox)", "since": null },
+    { "id": "overlay", "label": "Game overlay menu: CPU, GPU, RAM, IP (toolbox)", "since": null },
+    { "id": "cheats", "label": "Cheats menu (toolbox)", "since": null, "experimental": true, "note": "README marks the cheats menu as WIP." },
+    { "id": "shortcuts", "label": "Controller shortcuts (toolbox)", "since": null },
+    { "id": "home-titleids", "label": "Display Title IDs on the home menu", "since": null },
+    { "id": "custom-debug-text", "label": "Custom debug settings text and icon", "since": null },
+    { "id": "custom-sysinfo", "label": "Custom System Software version text", "since": null },
+    { "id": "ftp", "label": "FTP server (optional, port 1337)", "since": null },
+    { "id": "klog", "label": "Klog server (port 9081)", "since": null },
+    { "id": "itemzflow", "label": "Itemzflow integration and shortcut", "since": null },
+    { "id": "ps5debug", "label": "PS5Debug (optional)", "since": "2.0b" },
+    { "id": "lite-mode", "label": "Lite mode (kstuff or HEN only)", "since": "1.9b" },
+    { "id": "byepervisor", "label": "Byepervisor kernel patches", "since": "1.9b", "firmware": ["2.00", "2.99"], "note": "Release notes: '[2.xx ONLY]'." },
+    { "id": "disc-eject", "label": "Auto eject disc after start-up (BD-J / LUA exploits)", "since": "2.3B", "requires": ["disc-drive"] },
+    { "id": "bd-license", "label": "Blu-ray license activation (toolbox)", "since": null, "requires": ["disc-drive"] },
+    { "id": "kstuff-menu", "label": "Kstuff menu (toolbox)", "since": "2.4B" }
+  ],
+  "releases": [
+    {
+      "version": "2.5B", "date": "2025-12-25", "channel": "stable",
+      "firmware": [],
+      "requires": ["A PS5 exploit and the Payload SDK ELF loader (required since 2.4B)."],
+      "requiresComponents": ["elfldr"],
+      "knownIssues": [],
+      "note": "Release notes contain no firmware statement."
+    },
+    {
+      "version": "2.4B", "date": "2025-12-01", "channel": "stable",
+      "firmware": [{ "range": ["8.40", "10.01"], "level": "documented", "evidence": "Release notes: 'Fixed etaHEN and Cheats support for 8.40-10.01'" }],
+      "requires": ["Release notes: 'The Payload SDK ELFLDR is now REQUIRED for etaHEN to load'."],
+      "requiresComponents": ["elfldr"],
+      "knownIssues": []
+    },
+    {
+      "version": "2.3B", "date": "2025-09-04", "channel": "stable",
+      "firmware": [
+        { "versions": ["8.00", "8.20"], "level": "documented", "evidence": "Release notes: 'Added Full 8.00 and 8.20 Support with Kstuff [fully tested]'" },
+        { "versions": ["8.40", "8.60"], "level": "limited", "evidence": "Release notes: 'Added 8.40, 8.60 and 9.xx Toolbox support [untested] (no kstuff yet)'" },
+        { "range": ["9.00", "9.99"], "level": "limited", "evidence": "Release notes: 'Added 8.40, 8.60 and 9.xx Toolbox support [untested] (no kstuff yet)'" }
+      ],
+      "requires": ["A PS5 exploit and an ELF loader."],
+      "knownIssues": []
+    },
+    {
+      "version": "2.2", "date": "2025-06-10", "channel": "stable",
+      "firmware": [],
+      "requires": ["A PS5 exploit and an ELF loader."],
+      "knownIssues": [],
+      "note": "Release notes mention only devkit and testkit firmware activation patches, no retail firmware statement."
+    },
+    {
+      "version": "2.1B", "date": "2025-04-28", "channel": "stable",
+      "firmware": [{ "range": ["7.00", "7.99"], "level": "documented", "evidence": "Release notes: 'Updated kstuff and etaHEN for 7.xx support'" }],
+      "requires": ["A PS5 exploit and an ELF loader. Release notes: the new toolbox loading method requires kstuff, with the old method as fallback."],
+      "knownIssues": []
+    },
+    {
+      "version": "2.0b", "date": "2025-03-28", "channel": "stable",
+      "firmware": [{ "range": ["5.00", "6.99"], "level": "documented", "evidence": "Release notes: 'Added support (and updated kstuff) for 5.xx and 6.xx'" }],
+      "restrictions": [{ "feature": "ps5debug", "range": ["5.00", "5.99"], "text": "Release notes: 'PS5Debug has been disabled for 5.xx until a fix is released'." }],
+      "requires": ["A PS5 exploit and an ELF loader."],
+      "knownIssues": ["Release notes: rest mode needs the toolbox auto start disabled before entering rest mode."]
+    },
+    {
+      "version": "1.9b", "date": "2024-12-25", "channel": "stable",
+      "firmware": [{ "range": ["2.00", "2.99"], "level": "documented", "evidence": "Release notes: 'Added Byepervisor (By @PS5Dev) to etaHEN for 2.xx'" }],
+      "requires": ["A PS5 exploit. Release notes: 4.xx requires kstuff being sent to port 9020."],
+      "knownIssues": []
+    },
+    { "version": "1.08b", "date": "2024-08-12", "channel": "stable", "firmware": [], "requires": [], "knownIssues": [], "note": "No firmware statement." },
+    { "version": "1.7b", "date": "2024-02-25", "channel": "stable", "firmware": [], "requires": [], "knownIssues": [], "note": "No firmware statement." },
+    {
+      "version": "1.6b", "date": "2024-02-11", "channel": "stable",
+      "firmware": [{ "versions": ["4.02"], "level": "documented", "evidence": "Release notes: 'Fixed 4.02 support'" }],
+      "requires": [], "knownIssues": []
+    },
+    { "version": "1.5b", "date": "2024-02-03", "channel": "stable", "firmware": [], "requires": [], "knownIssues": ["Release notes: '(4.5x ONLY) Fixed an issue that could cause etaHEN to crash'."], "note": "No new firmware statement." },
+    {
+      "version": "1.4b", "date": "2024-01-13", "channel": "stable",
+      "firmware": [{ "versions": ["4.00", "4.02"], "level": "documented", "evidence": "Release notes: 'Added support for 4.00, 4.02'" }],
+      "requires": [], "knownIssues": []
+    },
+    {
+      "version": "1.3b", "date": "2024-01-03", "channel": "stable",
+      "firmware": [
+        { "versions": ["3.00"], "level": "documented", "evidence": "Release notes: 'Kstuff for 3.xx added (3.00 tested)'" },
+        { "range": ["3.00", "3.99"], "level": "limited", "evidence": "Release notes: 'Kstuff for 3.xx added (3.00 tested)' — only 3.00 stated as tested" }
+      ],
+      "requires": [], "knownIssues": []
+    },
+    { "version": "1.21b", "date": "2023-12-24", "channel": "stable", "firmware": [], "requires": [], "knownIssues": [], "note": "No firmware statement." },
+    {
+      "version": "1.11b", "date": "2023-11-04", "channel": "stable",
+      "firmware": [{ "versions": ["4.51"], "level": "documented", "evidence": "Release title 'etaHEN 1.1b with 4.51 support'; notes: 'Updated kstuff for 4.51'" }],
+      "requires": [], "knownIssues": []
+    },
+    { "version": "1.1b", "date": "2023-10-30", "channel": "pre-release", "firmware": [], "requires": [], "knownIssues": [], "note": "No firmware statement." },
+    {
+      "version": "1.0b", "date": "2023-10-28", "channel": "pre-release", "firmware": [], "requires": [],
+      "knownIssues": ["Release notes: cheats interfere with homebrew apps that request a jailbreak; use etaHEN without cheats for apps like the store."],
+      "note": "No firmware statement."
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "environment": "goldhen",
+  "name": "GoldHEN",
+  "platform": "ps4",
+  "author": "SiSTRo",
+  "lastVerified": "2026-11-16",
+  "firmwareListComplete": true,
+  "firmwareListNote": "Each release names every firmware it supports: v1.0–v2.3 ship one payload file per firmware in the tagged commit, and v2.4b17–v2.4b18 have a 'Supported Firmware' list in their release notes. A firmware missing from a release's list is treated as not supported by that release.",
+  "readmeDescribes": "2.4b18",
+  "loading": "GoldHEN is a payload that a separate exploit loads on the console. VantaFlow never performs or automates that step.",
+  "sources": [
+    { "label": "GoldHEN releases (release notes, Supported Firmware lists)", "url": "https://github.com/GoldHEN/GoldHEN/releases" },
+    { "label": "GoldHEN README (feature list)", "url": "https://github.com/GoldHEN/GoldHEN/blob/master/README.md" },
+    { "label": "GoldHEN CHANGELOG.md at tag 2.4b18", "url": "https://github.com/GoldHEN/GoldHEN/blob/2.4b18/CHANGELOG.md" },
+    { "label": "Per-firmware payload files in tagged commits (e.g. tag 2.3)", "url": "https://github.com/GoldHEN/GoldHEN/tree/2.3" }
+  ],
+  "features": [
+    { "id": "hen", "label": "Homebrew enabler", "since": "1.0" },
+    { "id": "ftp", "label": "FTP server (port 2121)", "since": "1.0" },
+    { "id": "binloader", "label": "BinLoader server (port 9090)", "since": "2.0b", "experimental": true, "note": "Release notes: 'The BinLoader server is in an experimental phase'." },
+    { "id": "menu", "label": "GoldHEN UI menu", "since": "2.0b" },
+    { "id": "config", "label": "Config file /data/GoldHEN/config.ini", "since": "2.1" },
+    { "id": "klog", "label": "Klog server (port 3232)", "since": "2.1" },
+    { "id": "cheats", "label": "Cheat Menu", "since": "2.2", "experimental": true, "note": "Release notes: 'The Cheat Menu is experimental, use with caution.'" },
+    { "id": "debug-settings", "label": "Debug settings", "since": "2.2.3" },
+    { "id": "plugins", "label": "Plugins", "since": "2.3" },
+    { "id": "fps", "label": "FPS counter overlay", "since": "2.3" },
+    { "id": "titleid-label", "label": "Title ID labels", "since": "2.3" },
+    { "id": "scanlines", "label": "Scanlines overlay", "since": "2.3" },
+    { "id": "sysinfo-overlay", "label": "Game overlay SysInfo", "since": "2.4b17", "note": "Added in beta 2.4b15, which was not published as a GitHub release; first published in 2.4b17." },
+    { "id": "kernel-loaders", "label": "Kernel loader support", "since": "2.4b17" },
+    { "id": "cheat-downloader", "label": "Cheat Downloader", "since": "2.4b18" },
+    { "id": "rest-mode", "label": "Rest mode support", "since": null },
+    { "id": "external-hdd", "label": "External HDD support", "since": null },
+    { "id": "remote-play", "label": "Remote Play enabler", "since": null },
+    { "id": "update-block", "label": "Firmware update block", "since": null }
+  ],
+  "releases": [
+    {
+      "version": "2.4b18", "date": "2024-10-28", "channel": "pre-release",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "9.00", "9.60", "10.00", "10.01", "10.50", "10.70", "10.71", "11.00"], "level": "documented", "evidence": "Release notes: Supported Firmware list" }],
+      "requires": ["A supported exploit to load the payload. Release notes: supports WebKit exploits and pppwn; pppwn needs the author's custom stage2."],
+      "knownIssues": ["Release notes: Apollo, Itemzflow and Orbis Toolbox may cause the PS4 to crash or malfunction when entering or leaving rest mode."]
+    },
+    {
+      "version": "2.4b17.3", "date": "2024-06-12", "channel": "pre-release",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "9.00", "9.60", "10.00", "10.01", "11.00"], "level": "documented", "evidence": "Release notes: Supported Firmware list" }],
+      "requires": ["A supported exploit to load the payload (WebKit exploits or pppwn with the custom stage2)."],
+      "knownIssues": []
+    },
+    {
+      "version": "2.4b17.2", "date": "2024-05-21", "channel": "pre-release",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "9.00", "10.00", "10.01", "11.00"], "level": "documented", "evidence": "Release notes: Supported Firmware list" }],
+      "requires": ["A supported exploit to load the payload (WebKit exploits or pppwn with the custom stage2)."],
+      "knownIssues": []
+    },
+    {
+      "version": "2.4b17", "date": "2024-05-09", "channel": "pre-release",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "9.00", "11.00"], "level": "documented", "evidence": "Release notes: Supported Firmware list" }],
+      "requires": ["A supported exploit to load the payload (WebKit exploits or pppwn with the custom stage2)."],
+      "knownIssues": []
+    },
+    {
+      "version": "2.3", "date": "2022-12-25", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "9.00"], "level": "documented", "evidence": "Payload files goldhen_2.3_505/672/900.bin in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."],
+      "knownIssues": []
+    },
+    {
+      "version": "2.2.4", "date": "2022-09-07", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.2.3", "date": "2022-09-06", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.2.2", "date": "2022-03-24", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.2.1", "date": "2022-03-22", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit (no 6.71 file in this release)" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.2", "date": "2022-03-10", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.1.2", "date": "2022-02-18", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.1.1", "date": "2022-02-10", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.1", "date": "2022-02-02", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.71", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.0b2", "date": "2021-12-19", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "7.02", "7.50", "7.51", "7.55", "9.00"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "2.0b", "date": "2021-11-23", "channel": "stable",
+      "firmware": [
+        { "versions": ["5.05", "6.72", "7.02", "7.50", "7.51", "7.55"], "level": "documented", "evidence": "Payload files in the tagged commit" },
+        { "versions": ["9.00"], "level": "documented", "evidence": "goldhen_2.0b_900.bin added on 2021-12-13 (commit 0305d8c 'Release v2.0b for 9.00')" }
+      ],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "1.1", "date": "2021-09-30", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "7.02", "7.50", "7.51", "7.55"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    },
+    {
+      "version": "1.0", "date": "2021-09-30", "channel": "stable",
+      "firmware": [{ "versions": ["5.05", "6.72", "7.02", "7.55"], "level": "documented", "evidence": "Payload files in the tagged commit" }],
+      "requires": ["A supported exploit to load the payload."], "knownIssues": []
+    }
+  ]
+}

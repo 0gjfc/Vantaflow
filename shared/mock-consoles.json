@@ -1,0 +1,165 @@
+{
+  "note": "Demonstration consoles. Each entry is a detection result exactly as a real detection provider would return it, plus the compatibility status the engine must produce (used as shared test vectors by the desktop app and, later, the Android app). Firmware values are examples only.",
+  "consoles": [
+    {
+      "id": "ps4-goldhen-supported",
+      "label": "Living room PS4 Pro",
+      "scenario": "PS4 with a supported GoldHEN configuration",
+      "expected": "compatible",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.24" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps4", "model": "ps4-pro", "verified": true, "source": "mock" },
+        "firmware": { "version": "9.00", "verified": true, "source": "mock" },
+        "environment": { "kind": "goldhen", "state": "active", "version": "2.4b18", "verified": true, "source": "mock" },
+        "storage": [
+          { "name": "Internal", "total": 862, "holds": "ps4", "categories": { "Applications": 14.8, "Captures & media": 21.6, "Saved data": 6.4, "System": 29.5 } },
+          { "name": "USB0", "total": 1863, "categories": { "Backups": 612.7, "Captures & media": 98.2, "Music": 14.3 } }
+        ]
+      }
+    },
+    {
+      "id": "ps4-unsupported-firmware",
+      "label": "Bedroom PS4 Slim",
+      "scenario": "PS4 on a firmware no GoldHEN release documents",
+      "expected": "unsupported",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.31" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps4", "model": "ps4-slim", "verified": true, "source": "mock" },
+        "firmware": { "version": "9.03", "verified": true, "source": "mock" },
+        "environment": { "kind": null, "state": "absent", "version": null, "verified": true, "source": "mock" },
+        "storage": [{ "name": "Internal", "total": 862, "holds": "ps4", "categories": { "Applications": 9.1, "Saved data": 3.2, "System": 29.5 } }]
+      }
+    },
+    {
+      "id": "ps4-no-goldhen",
+      "label": "Office PS4",
+      "scenario": "PS4 without GoldHEN",
+      "expected": "unsupported",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.40" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps4", "model": "ps4", "verified": true, "source": "mock" },
+        "firmware": { "version": "11.00", "verified": true, "source": "mock" },
+        "environment": { "kind": null, "state": "absent", "version": null, "verified": true, "source": "mock" },
+        "storage": [{ "name": "Internal", "total": 408, "holds": "ps4", "categories": { "Applications": 6.2, "Saved data": 2.9, "System": 29.5 } }]
+      }
+    },
+    {
+      "id": "ps4-goldhen-unverified",
+      "label": "Garage PS4 (port scan only)",
+      "scenario": "PS4 where only an open network port suggests GoldHEN",
+      "expected": "unknown",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.52" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps4", "model": "ps4-slim", "verified": true, "source": "mock" },
+        "firmware": { "version": "9.00", "verified": true, "source": "mock" },
+        "environment": { "kind": "goldhen", "state": "active", "version": null, "verified": false, "source": "network-probe", "evidence": "TCP port 2121 answered. An open port does not prove GoldHEN is running." },
+        "storage": []
+      }
+    },
+    {
+      "id": "ps5-etahen-supported",
+      "label": "Living room PS5",
+      "scenario": "PS5 with a supported etaHEN configuration",
+      "expected": "compatible",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.25" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps5", "model": "ps5", "verified": true, "source": "mock" },
+        "firmware": { "version": "8.20", "verified": true, "source": "mock" },
+        "environment": { "kind": "etahen", "state": "active", "version": "2.3B", "verified": true, "source": "mock", "components": { "kstuff": true, "elfldr": true } },
+        "storage": [
+          { "name": "Internal SSD", "total": 667, "holds": "ps5", "categories": { "Applications": 18.9, "Captures & media": 34.2, "Saved data": 9.8, "System": 41.3 } },
+          { "name": "USB extended storage", "total": 1863, "holds": "ps4", "categories": { "Backups": 120.4 } }
+        ]
+      }
+    },
+    {
+      "id": "ps5-etahen-partial",
+      "label": "Study PS5 Digital Edition",
+      "scenario": "PS5 where the etaHEN release documents only untested toolbox support",
+      "expected": "partial",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.26" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps5", "model": "ps5-digital", "verified": true, "source": "mock" },
+        "firmware": { "version": "9.40", "verified": true, "source": "mock" },
+        "environment": { "kind": "etahen", "state": "active", "version": "2.3B", "verified": true, "source": "mock", "components": { "kstuff": false, "elfldr": true } },
+        "storage": [{ "name": "Internal SSD", "total": 667, "holds": "ps5", "categories": { "Applications": 12.4, "Saved data": 4.1, "System": 41.3 } }]
+      }
+    },
+    {
+      "id": "ps5-unsupported-firmware",
+      "label": "Spare PS5 Slim",
+      "scenario": "PS5 on a firmware no etaHEN release mentions",
+      "expected": "unsupported",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.33" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps5", "model": "ps5-slim", "verified": true, "source": "mock" },
+        "firmware": { "version": "10.20", "verified": true, "source": "mock" },
+        "environment": { "kind": null, "state": "absent", "version": null, "verified": true, "source": "mock" },
+        "storage": [{ "name": "Internal SSD", "total": 848, "holds": "ps5", "categories": { "Applications": 22.0, "System": 52.1 } }]
+      }
+    },
+    {
+      "id": "ps5-no-etahen",
+      "label": "Kids' PS5 Pro",
+      "scenario": "PS5 without etaHEN",
+      "expected": "unsupported",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.34" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps5", "model": "ps5-pro", "verified": true, "source": "mock" },
+        "firmware": { "version": "7.61", "verified": true, "source": "mock" },
+        "environment": { "kind": null, "state": "absent", "version": null, "verified": true, "source": "mock" },
+        "storage": [{ "name": "Internal SSD", "total": 1860, "holds": "ps5", "categories": { "Applications": 30.5, "System": 61.0 } }]
+      }
+    },
+    {
+      "id": "ps5-etahen-unknown-version",
+      "label": "Test bench PS5",
+      "scenario": "PS5 reporting an etaHEN version that is not in the researched data",
+      "expected": "unknown",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.35" },
+        "network": { "state": "online" },
+        "console": { "generation": "ps5", "model": "ps5", "verified": true, "source": "mock" },
+        "firmware": { "version": "9.60", "verified": true, "source": "mock" },
+        "environment": { "kind": "etahen", "state": "active", "version": "3.0B", "verified": true, "source": "mock", "components": { "kstuff": true, "elfldr": true } },
+        "storage": []
+      }
+    },
+    {
+      "id": "unknown-console",
+      "label": "Unidentified device",
+      "scenario": "Unknown console",
+      "expected": "unknown",
+      "detection": {
+        "connection": { "state": "connected", "transport": "mock", "address": "192.168.1.77" },
+        "network": { "state": "online" },
+        "console": { "generation": null, "model": null, "verified": false, "source": "mock" },
+        "firmware": { "version": null, "verified": false, "source": "mock" },
+        "environment": { "kind": null, "state": "unknown", "version": null, "verified": false, "source": "mock" },
+        "storage": []
+      }
+    },
+    {
+      "id": "ps4-disconnected",
+      "label": "Holiday PS4 Slim",
+      "scenario": "Disconnected console",
+      "expected": "not-detected",
+      "detection": {
+        "connection": { "state": "disconnected", "transport": "mock", "address": "192.168.1.60", "lastSeen": "2026-11-14T21:10:00Z" },
+        "network": { "state": "offline" },
+        "console": { "generation": "ps4", "model": "ps4-slim", "verified": true, "source": "last-known" },
+        "firmware": { "version": "9.00", "verified": false, "source": "last-known" },
+        "environment": { "kind": "goldhen", "state": "unknown", "version": "2.3", "verified": false, "source": "last-known" },
+        "storage": []
+      }
+    }
+  ]
+}

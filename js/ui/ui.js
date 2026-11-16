@@ -37,6 +37,7 @@ export const ICONS = {
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
   plugin: '<path d="M9 3.5v3M15 3.5v3M7 6.5h10v4a5 5 0 0 1-10 0z"/><path d="M12 15.5v5"/>',
   sim: '<circle cx="12" cy="12" r="8.5"/><path d="M8 12h8M12 8v8"/>',
+  console: '<rect x="3" y="7.5" width="18" height="9" rx="2"/><path d="M6.5 12h4M17 11v2M7 16.5v2M17 16.5v2"/>',
   up: '<path d="M7 14l5-5 5 5"/>',
 };
 
