@@ -6,7 +6,8 @@
 export const GENERATIONS = ['ps4', 'ps5'];
 export const ENVIRONMENTS = ['goldhen', 'etahen'];
 export const CONNECTION_STATES = ['connected', 'disconnected', 'unknown'];
-export const ENVIRONMENT_STATES = ['active', 'absent', 'unknown'];
+// 'unsupported-method': no documented read-only way exists to check (real detection, Stage 4).
+export const ENVIRONMENT_STATES = ['active', 'absent', 'unknown', 'unsupported-method'];
 
 export const STATUS = Object.freeze({
   COMPATIBLE: 'compatible',
@@ -35,17 +36,22 @@ export const connectionStatus = (raw, c = obj(raw)) => freeze({
   lastSeen: text(c.lastSeen),
 });
 
-export const networkStatus = (raw, n = obj(raw)) => freeze({ state: one(n.state, ['online', 'offline'], 'unknown') });
+export const networkStatus = (raw, n = obj(raw)) => freeze({
+  state: one(n.state, ['online', 'offline'], 'unknown'),
+  power: one(n.power, ['on', 'standby'], 'unknown'), // from the console's own discovery reply
+});
 
 export const consoleInfo = (raw, c = obj(raw)) => freeze({
   generation: one(c.generation, GENERATIONS, null),
   model: text(c.model),
+  name: text(c.name), // the console's own name, when it reports one
   verified: c.verified === true,
   source: text(c.source) ?? 'unknown',
 });
 
 export const firmwareInfo = (raw, f = obj(raw)) => freeze({
   version: text(f.version),
+  raw: text(f.raw), // value as reported, before decoding (e.g. DDP system-version)
   verified: f.verified === true,
   source: text(f.source) ?? 'unknown',
 });
@@ -77,6 +83,31 @@ export const errorInfo = (raw, e = obj(raw)) => freeze({
   at: text(e.at) ?? new Date().toISOString(),
 });
 
+// What a provider tried, how, and what it could not get (Stage 4).
+export const providerReport = (raw, r = obj(raw)) => freeze({
+  provider: text(r.provider) ?? 'unknown',
+  method: text(r.method),
+  attempted: freeze((r.attempted || []).filter((x) => typeof x === 'string')),
+  unavailable: freeze((r.unavailable || []).filter((x) => x && x.field).map((x) => freeze({ field: String(x.field), reason: String(x.reason ?? '') }))),
+});
+
+// The five homebrew-environment states shown to the user.
+export const HEN_STATUS = Object.freeze({
+  INSTALLED: 'Verified installed',
+  NOT_INSTALLED: 'Verified not installed',
+  UNKNOWN: 'Unknown',
+  NOT_DETECTED: 'Not detected',
+  UNSUPPORTED: 'Unsupported detection method',
+});
+export function henStatus(d) {
+  if (!d || d.connection.state !== 'connected') return HEN_STATUS.NOT_DETECTED;
+  const e = d.environment;
+  if (e.state === 'unsupported-method') return HEN_STATUS.UNSUPPORTED;
+  if (e.verified && e.state === 'active') return HEN_STATUS.INSTALLED;
+  if (e.verified && e.state === 'absent') return HEN_STATUS.NOT_INSTALLED;
+  return HEN_STATUS.UNKNOWN;
+}
+
 export const detectionResult = (raw, d = obj(raw)) => freeze({
   consoleId: text(d.consoleId),
   connection: connectionStatus(d.connection),
@@ -87,6 +118,7 @@ export const detectionResult = (raw, d = obj(raw)) => freeze({
   storage: freeze((d.storage || []).map((x) => storageDrive(x))),
   detectedAt: text(d.detectedAt),
   errors: freeze((d.errors || []).map((x) => errorInfo(x))),
+  report: providerReport(d.report),
 });
 
 export const reason = (status, code, message) => freeze({ status, code, message });

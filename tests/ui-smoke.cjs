@@ -1,5 +1,5 @@
 // End-to-end smoke test in a real browser. Optional: needs Playwright (not a project dependency).
-//   python3 -m http.server 8080 &      # from the project folder
+//   node desktop/server.mjs &          # from the project folder (python3 -m http.server also works)
 //   node tests/ui-smoke.cjs http://localhost:8080/
 // Exits non-zero on the first failed check.
 const { chromium } = require('playwright');
@@ -194,6 +194,8 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     await p.click('#console-status');
     await wait(p, 400);
     assert.equal(await head(p), 'Consoles');
+    await p.click('.row:has-text("Living room PS4 Pro")'); // first row is "Discover consoles"
+    await wait(p);
     const chips = await p.$$eval('.panel-list .compat', (els) => els.map((e) => e.textContent));
     assert.equal(chips.length, 11);
     for (const label of ['Compatible', 'Partially compatible', 'Unsupported', 'Unknown', 'Not detected']) assert.ok(chips.includes(label), label);

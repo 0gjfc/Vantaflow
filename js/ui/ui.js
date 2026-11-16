@@ -37,6 +37,8 @@ export const ICONS = {
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
   plugin: '<path d="M9 3.5v3M15 3.5v3M7 6.5h10v4a5 5 0 0 1-10 0z"/><path d="M12 15.5v5"/>',
   sim: '<circle cx="12" cy="12" r="8.5"/><path d="M8 12h8M12 8v8"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>',
+  plus: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
   console: '<rect x="3" y="7.5" width="18" height="9" rx="2"/><path d="M6.5 12h4M17 11v2M7 16.5v2M17 16.5v2"/>',
   up: '<path d="M7 14l5-5 5 5"/>',
 };
@@ -59,9 +61,10 @@ export function btn(action) {
   return `<span class="btn-pill">${PILLS[name] || esc(name)}</span>`;
 }
 
-export const tag = (kind) => kind === 'live'
-  ? '<span class="tag live" title="Works for real in this prototype">LIVE</span>'
-  : '<span class="tag sim" title="Mock data / simulated action">SIMULATED</span>';
+export const tag = (kind) => ({
+  live: '<span class="tag live" title="Works for real in this prototype">LIVE</span>',
+  real: '<span class="tag live" title="Your own console, checked read-only on the local network">READ-ONLY</span>',
+}[kind] ?? '<span class="tag sim" title="Mock data / simulated action">SIMULATED</span>');
 
 // Small widgets used by several sections.
 export const bar = (p) => `<span class="progress"><i style="width:${p}%"></i></span>`;
@@ -179,6 +182,28 @@ export function textDialog({ title, value = '', maxLength = 16, hint = '' }) {
   });
 }
 
+// Pick one option from a list (console actions, discovered consoles). Resolves to the option's
+// id, or null when cancelled. ↑/↓ moves, ✕ picks, ○ cancels; options can also be clicked.
+export function choiceDialog({ title, message = '', options }) {
+  return new Promise((resolve) => {
+    const el = document.getElementById('dialog');
+    const state = { el, sel: 0, list: options.length, resolve: (ok) => resolve(ok ? options[state.sel]?.id ?? null : null) };
+    state.render = () => {
+      el.innerHTML = `<div class="dialog-box"><h2>${esc(title)}</h2>${message ? `<p>${esc(message)}</p>` : ''}
+        <div class="choice-list">${options.map((o, i) => `<button data-i="${i}" class="choice${i === state.sel ? ' sel' : ''}">${esc(o.label)}${o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`).join('')}</div>
+        <div class="dialog-btns"><button data-cancel>Cancel</button></div></div>`;
+    };
+    dialog = state;
+    el.onclick = (e) => {
+      if (e.target.closest('[data-cancel]')) { close(false); return; }
+      const b = e.target.closest('[data-i]');
+      if (b) { state.sel = Number(b.dataset.i); close(true); }
+    };
+    state.render();
+    el.hidden = false;
+  });
+}
+
 function close(ok) {
   const d = dialog;
   dialog = null;
@@ -191,7 +216,12 @@ function close(ok) {
 // Returns true when a dialog consumed the action.
 export function dialogHandle(action) {
   if (!dialog) return false;
-  if (action === 'left' || action === 'right') { dialog.sel = action === 'left' ? 0 : 1; dialog.render(); blip(); }
+  if (dialog.list && (action === 'up' || action === 'down')) {
+    dialog.sel = Math.max(0, Math.min(dialog.list - 1, dialog.sel + (action === 'up' ? -1 : 1)));
+    dialog.render();
+    blip();
+  } else if (dialog.list && action === 'cross') close(true);
+  else if (!dialog.list && (action === 'left' || action === 'right')) { dialog.sel = action === 'left' ? 0 : 1; dialog.render(); blip(); }
   else if (action === 'cross') close(dialog.sel === 1);
   else if (action === 'circle') close(false);
   return true;

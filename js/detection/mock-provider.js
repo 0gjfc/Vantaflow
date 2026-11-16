@@ -15,6 +15,6 @@ export class MockDetectionProvider {
     await new Promise((done) => setTimeout(done, this.latencyMs));
     const config = this.configs.find((c) => c.id === id);
     if (!config) throw Object.assign(new Error(`No console with id "${id}".`), { code: 'not-found' });
-    return structuredClone(config.detection);
+    return { ...structuredClone(config.detection), report: { provider: 'mock', method: 'Demonstration data from shared/mock-consoles.json — no console was contacted.', attempted: [], unavailable: [] } };
   }
 }

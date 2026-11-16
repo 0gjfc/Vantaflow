@@ -5,7 +5,8 @@ import { unreadCount } from '../sections/content.js';
 import { FlowView, PanelView } from '../ui/views.js';
 import { settings, onChange, activeProfile } from './settings.js';
 import { flowConfig, bgSnapshot } from './appearance.js';
-import { platform, platformOf, henLogo, activeDetection, activeConsoleId, compatibilityOf } from '../platform/index.js';
+import { platform, platformOf, henLogo, activeDetection, activeConsoleId, compatibilityOf, isRealConsole, onDetection } from '../platform/index.js';
+import { henStatus } from '../models/index.js';
 import { loadLibrary } from '../data/library.js';
 import { profile } from '../data/mock.js';
 import { esc, icon, btn, blip, toast, dialogHandle, splashHandle, wakeAudio } from '../ui/ui.js';
@@ -55,7 +56,8 @@ function put(el, html) {
 }
 
 const STATUS_DOT = { compatible: 'ok', partial: 'away', unsupported: 'bad', unknown: 'off', 'not-detected': 'off' };
-const HEN_DOT = (e) => (e.state === 'active' && e.verified ? 'ok' : e.state === 'absent' ? 'off' : 'away');
+const HEN_DOT = (e) => (e.state === 'active' && e.verified ? 'ok' : e.state === 'absent' || e.state === 'unsupported-method' ? 'off' : 'away');
+const GEN = { ps4: 'PS4', ps5: 'PS5' };
 
 function refreshChrome() {
   const p = platform();
@@ -64,13 +66,16 @@ function refreshChrome() {
   const model = platformOf(d?.console.generation)?.models.find((m) => m.id === d.console.model);
   put($('#profile'), `<span class="avatar">${esc(settings.username[0])}<i class="dot ${PRESENCE_DOT[settings.presence]}"></i></span>
     <span class="who">${esc(settings.username)}<small>Level ${profile.level}</small></span>`);
+  const real = isRealConsole(activeConsoleId());
   const hb = $('#gh-badge');
   hb.dataset.id = p.hen.id;
-  hb.title = `${p.hen.name} — simulated status`;
+  hb.title = `${p.hen.name} — ${real ? henStatus(d) : 'simulated status'}`;
   hb.setAttribute('aria-label', p.hen.name);
   put(hb, `${henLogo(p.hen, 'gh-mini-img')}<span class="dot ${d ? HEN_DOT(d.environment) : 'off'}"></span>`);
-  const fw = d?.connection.state === 'connected' ? `FW ${esc(d.firmware.version ?? '?')}` : 'Not connected';
-  put($('#console-status'), `<span class="dot ${STATUS_DOT[c.status]}" title="${esc(c.label)}"></span>${esc(model?.short ?? 'Unknown console')} · ${fw} <span class="mock">MOCK</span>`);
+  const connected = d?.connection.state === 'connected';
+  const fw = connected ? `FW ${esc(d.firmware.version ?? '?')}${d.firmware.version && !d.firmware.verified ? ' (unconfirmed)' : ''}` : 'Not connected';
+  const name = real ? `${GEN[d?.console.generation] ?? 'Console'}${d?.console.name ? ` “${esc(d.console.name)}”` : ''}` : esc(model?.short ?? 'Unknown console');
+  put($('#console-status'), `<span class="dot ${STATUS_DOT[c.status]}" title="${esc(c.label)}"></span>${name} · ${fw} ${real ? '' : '<span class="mock">MOCK</span>'}`);
   const unread = unreadCount();
   const badge = $('.nav-btn[data-id="notifications"] .badge');
   badge.textContent = unread || '';
@@ -151,6 +156,12 @@ export function initNavigation() {
     ${icon(s.icon)}<span class="lbl">${esc(s.short || s.label)}</span>${s.id === 'notifications' ? '<span class="badge"></span>' : ''}</button>`).join('');
   document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => { goto(b.dataset.id); setFocus('content'); }));
   $('#prompts').addEventListener('click', (e) => { const b = e.target.closest('[data-action]'); if (b) dispatch(b.dataset.action); });
+  // Real consoles are checked in the background; show the results as they arrive.
+  onDetection(() => {
+    refreshChrome();
+    if (byId[current].view === 'panel') panel.render();
+    else flow.renderStorage();
+  });
   setInterval(tickClock, 5000);
   tickClock();
   goto('games');

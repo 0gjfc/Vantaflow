@@ -4,7 +4,7 @@
 import { Coverflow } from './carousel.js';
 import { coverArt } from './art.js';
 import { formatPlayed } from '../data/library.js';
-import { storageInfo } from '../platform/index.js';
+import { storageInfo, activeDetection } from '../platform/index.js';
 import { activeProfile, toggleFavorite } from '../core/settings.js';
 import { esc, icon, btn, tag, blip, toast, simulated, confirmDialog, showSplash } from './ui.js';
 
@@ -68,7 +68,11 @@ export class FlowView {
 
   renderStorage() {
     const drives = storageInfo();
-    if (!drives.length) { this.root.querySelector('.storage').innerHTML = '<div><b>Storage</b> <span class="mock">MOCK</span><div class="bar"></div>Console not connected</div>'; return; }
+    if (!drives.length) {
+      const why = activeDetection()?.connection.state === 'connected' ? 'Not available from this console' : 'Console not connected';
+      this.root.querySelector('.storage').innerHTML = `<div><b>Storage</b><div class="bar"></div>${why}</div>`;
+      return;
+    }
     this.root.querySelector('.storage').innerHTML = drives.map((d) => `<div><b>${esc(d.name)}</b> <span class="mock">MOCK</span>
       <div class="bar"><i style="width:${(d.used / d.total) * 100}%"></i></div>${d.free.toFixed(1)} GB free of ${d.total} GB</div>`).join('');
   }

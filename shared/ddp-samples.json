@@ -1,0 +1,71 @@
+{
+  "note": "DDP reply samples CONSTRUCTED from the documented reply format (chiaki-ng discovery.c, pyps4-2ndscreen test fixtures, Home Assistant ps4 integration). They are not captured from a physical console. Desktop (tests/connectivity.test.mjs) and Android (SharedDdpTest.kt) both parse them and must agree.",
+  "samples": [
+    {
+      "id": "ps4-on-900",
+      "askedAs": "ps4",
+      "reply": "HTTP/1.1 200 Ok\nhost-id:0123456789AB\nhost-type:PS4\nhost-name:Living room PS4\nhost-request-port:997\ndevice-discovery-protocol-version:00020020\nsystem-version:09008001\n",
+      "expect": { "generation": "ps4", "power": "on", "name": "Living room PS4", "firmware": "9.00", "firmwareConfirmed": true }
+    },
+    {
+      "id": "ps4-standby-755",
+      "askedAs": "ps4",
+      "reply": "HTTP/1.1 620 Server Standby\nhost-id:0123456789AC\nhost-type:PS4\nhost-name:Bedroom PS4\nhost-request-port:997\ndevice-discovery-protocol-version:00020020\nsystem-version:07558001\n",
+      "expect": { "generation": "ps4", "power": "standby", "name": "Bedroom PS4", "firmware": "7.55", "firmwareConfirmed": true }
+    },
+    {
+      "id": "ps4-1100-unconfirmed",
+      "askedAs": "ps4",
+      "reply": "HTTP/1.1 200 Ok\nhost-type:PS4\nhost-name:Office PS4\ndevice-discovery-protocol-version:00020020\nsystem-version:11008001\n",
+      "expect": { "generation": "ps4", "power": "on", "name": "Office PS4", "firmware": "11.00", "firmwareConfirmed": false }
+    },
+    {
+      "id": "ps4-no-system-version",
+      "askedAs": "ps4",
+      "reply": "HTTP/1.1 200 Ok\nhost-type:PS4\nhost-name:Garage PS4\ndevice-discovery-protocol-version:00020020\n",
+      "expect": { "generation": "ps4", "power": "on", "name": "Garage PS4", "firmware": null, "firmwareConfirmed": false }
+    },
+    {
+      "id": "ps4-running-app-dropped",
+      "askedAs": "ps4",
+      "reply": "HTTP/1.1 200 Ok\nhost-type:PS4\nhost-name:Den PS4\nrunning-app-titleid:CUSA00000\nrunning-app-name:Some Game\ndevice-discovery-protocol-version:00020020\nsystem-version:05058001\n",
+      "expect": { "generation": "ps4", "power": "on", "name": "Den PS4", "firmware": "5.05", "firmwareConfirmed": true }
+    },
+    {
+      "id": "ps5-on",
+      "askedAs": "ps5",
+      "reply": "HTTP/1.1 200 Ok\nhost-id:0123456789AD\nhost-type:PS5\nhost-name:Living room PS5\nhost-request-port:997\ndevice-discovery-protocol-version:00030010\nsystem-version:09400001\n",
+      "expect": { "generation": "ps5", "power": "on", "name": "Living room PS5", "firmware": null, "firmwareConfirmed": false, "rawSystemVersion": "09400001" }
+    },
+    {
+      "id": "ps5-standby",
+      "askedAs": "ps5",
+      "reply": "HTTP/1.1 620 Server Standby\nhost-type:PS5\nhost-name:Study PS5\ndevice-discovery-protocol-version:00030010\nsystem-version:08200001\n",
+      "expect": { "generation": "ps5", "power": "standby", "name": "Study PS5", "firmware": null, "firmwareConfirmed": false, "rawSystemVersion": "08200001" }
+    },
+    {
+      "id": "ps5-wrong-protocol",
+      "askedAs": "ps5",
+      "reply": "HTTP/1.1 200 Ok\nhost-type:PS5\nhost-name:Odd\ndevice-discovery-protocol-version:00020020\n",
+      "expect": { "generation": null }
+    },
+    {
+      "id": "ps4-reply-on-ps5-port",
+      "askedAs": "ps5",
+      "reply": "HTTP/1.1 200 Ok\nhost-type:PS4\nhost-name:Living room PS4\ndevice-discovery-protocol-version:00020020\nsystem-version:09008001\n",
+      "expect": { "generation": null }
+    },
+    {
+      "id": "unknown-host-type",
+      "askedAs": "ps4",
+      "reply": "HTTP/1.1 200 Ok\nhost-type:XYZ\nhost-name:Media box\ndevice-discovery-protocol-version:00020020\n",
+      "expect": { "generation": null }
+    },
+    {
+      "id": "not-ddp",
+      "askedAs": "ps4",
+      "reply": "SSH-2.0-OpenSSH_9.6\r\n",
+      "expect": { "generation": null, "notDdp": true }
+    }
+  ]
+}

@@ -32,6 +32,8 @@ export function assessPS4(d, { models, goldhen }) {
     add(STATUS.UNSUPPORTED, 'environment-mismatch', 'etaHEN is a PS5 environment; it cannot run on a PS4.');
   } else if (env.state === 'absent') {
     add(STATUS.UNSUPPORTED, 'environment-absent', `GoldHEN is not running. VantaFlow's console features need GoldHEN on a PS4.${fwKnown ? ` ${listedText}` : ''}`);
+  } else if (env.state === 'unsupported-method') {
+    add(STATUS.UNKNOWN, 'environment-check-unsupported', `GoldHEN status cannot be checked: ${env.evidence ?? 'no documented read-only method exists.'}`);
   } else if (env.state === 'unknown') {
     add(STATUS.UNKNOWN, 'environment-unknown', 'Whether GoldHEN is running could not be determined.');
   } else if (env.kind !== 'goldhen') {

@@ -366,3 +366,11 @@ button.prompt:hover { color: #fff; }
 .panel-detail { overflow-y: auto; scrollbar-width: none; }
 .panel-detail::-webkit-scrollbar { display: none; }
 .panel-detail .kv { margin: 14px 0; font-size: 18px; gap: 8px 18px; }
+
+/* Choice dialog (console actions, discovery results) */
+.choice-list { display: flex; flex-direction: column; gap: 6px; margin: 0 0 24px; max-height: 520px; overflow-y: auto; }
+.choice { display: block; width: 100%; padding: 14px 20px; border-radius: 4px; text-align: left; font-size: 22px; color: #fff; background: rgba(255, 255, 255, .06); }
+.choice small { display: block; margin-top: 4px; font-size: 16px; color: var(--fg3); }
+.choice.sel { background: var(--highlight); }
+.choice.sel small { color: rgba(255, 255, 255, .85); }
+.unavailable li { color: var(--fg2); }
