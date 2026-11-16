@@ -19,6 +19,7 @@ export const DEFAULTS = Object.freeze({
   uiSounds: true, volume: 50, music: false,
   wrap: true, swapConfirm: false, showPrompts: true, sortBy: 'name',
   clock24: true, showTitleIds: true, navLabels: 'active', coverSize: 'itemzflow',
+  console: 'ps4',
 });
 
 export const CHOICES = {
@@ -27,6 +28,7 @@ export const CHOICES = {
   sortBy: ['name', 'titleId', 'recent'],
   navLabels: ['active', 'always'],
   coverSize: ['itemzflow', 'large'],
+  console: ['ps4', 'ps5'],
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;

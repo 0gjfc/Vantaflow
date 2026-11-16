@@ -3,10 +3,6 @@
 
 export const profile = { name: 'Player One', level: 214, colors: ['#1d86f0', '#0b3f8c'] };
 
-export const consoleStatus = {
-  model: 'PS4 Pro', firmware: '9.00', connection: 'Online', ip: '192.168.1.24', temperature: '52°C',
-};
-
 export const storage = [
   { name: 'Internal', total: 825, used: 612.4 },
   { name: 'USB0', total: 1863, used: 845.1 },
@@ -86,7 +82,7 @@ export const notifications = [
   { title: 'Trophy unlocked', msg: 'Ashen Frontier — "Master of Arms" (Gold)', time: '12 min ago', icon: 'trophy', read: false },
   { title: 'Friend request', msg: 'drift_king_404 sent you a friend request.', time: '1 h ago', icon: 'friends', read: false },
   { title: 'Download complete', msg: 'Velocity Circuit GT update 02.01 is ready.', time: '3 h ago', icon: 'download', read: false },
-  { title: 'GoldHEN', msg: 'Plugins loaded: 3 (mock status).', time: 'Today', icon: 'flask', read: true },
+  { title: 'Homebrew enabler', msg: 'Plugins loaded: 3 (mock status).', time: 'Today', icon: 'flask', read: true },
   { title: 'Storage', msg: 'Internal storage is 74% full.', time: 'Yesterday', icon: 'folder', read: true },
   { title: 'Party invite', msg: 'NightCrow_88 invited you to a party.', time: 'Yesterday', icon: 'friends', read: true },
 ];
@@ -150,15 +146,30 @@ export const powerOptions = [
   { id: 'close', title: 'Close VantaFlow', icon: 'circle-x', sub: 'Return to the system home screen' },
 ];
 
-export const goldhen = {
-  status: 'Active', version: '2.4 (mock)', firmware: '9.00', since: 'Boot + 00:42:13',
-  features: ['Homebrew Enabler', 'Debug Settings', 'Remote Package Install', 'Rest Mode Support', 'External HDD Support', 'Cheat & Patch Engine', 'Plugin Loader'],
-  plugins: [
-    { name: 'game_patch', desc: 'Applies XML game patches at launch.', enabled: true },
-    { name: 'fliprate_remover', desc: 'Removes frame-rate caps where patched.', enabled: true },
-    { name: 'no_share_watermark', desc: 'Hides share-screen watermark.', enabled: true },
-    { name: 'afr', desc: 'Application file redirector.', enabled: false },
-  ],
+// Homebrew enabler per mock console (Settings → Console): GoldHEN on PS4, etaHEN on PS5.
+export const hens = {
+  ps4: {
+    name: 'GoldHEN', console: 'PS4 Pro', firmware: '9.00', logo: 'assets/goldhen/goldhen-logo.png', dir: '/data/GoldHEN', ext: 'prx',
+    status: 'Active', version: '2.4 (mock)', since: 'Boot + 00:42:13', about: 'GoldHEN is a PS4 homebrew enabler by SiSTRo.',
+    features: ['Homebrew Enabler', 'Debug Settings', 'Remote Package Install', 'Rest Mode Support', 'External HDD Support', 'Cheat & Patch Engine', 'Plugin Loader'],
+    plugins: [
+      { name: 'game_patch', desc: 'Applies XML game patches at launch.', enabled: true },
+      { name: 'fliprate_remover', desc: 'Removes frame-rate caps where patched.', enabled: true },
+      { name: 'no_share_watermark', desc: 'Hides share-screen watermark.', enabled: true },
+      { name: 'afr', desc: 'Application file redirector.', enabled: false },
+    ],
+  },
+  ps5: {
+    name: 'etaHEN', console: 'PS5', firmware: '4.03', logo: 'assets/etahen/etahen-logo.jpg', dir: '/data/etaHEN', ext: 'elf',
+    status: 'Active', version: '2.0 (mock)', since: 'Boot + 01:07:55', about: 'etaHEN is a PS5 homebrew enabler by LightningMods and contributors.',
+    features: ['Homebrew Enabler', 'Debug Settings', 'FTP Server', 'Cheats', 'Plugin Loader', 'Toolbox Menu'],
+    plugins: [
+      { name: 'ftp_server', desc: 'File transfer over the local network.', enabled: true },
+      { name: 'cheats', desc: 'In-game cheat engine.', enabled: true },
+      { name: 'toolbox', desc: 'Quick menu with homebrew tools.', enabled: true },
+      { name: 'klog_server', desc: 'Streams the kernel log for debugging.', enabled: false },
+    ],
+  },
 };
 
 export function sortItems(items, by) {

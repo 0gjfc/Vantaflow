@@ -20,6 +20,8 @@ assert.equal(s.bgDim, DEFAULTS.bgDim);
 assert.equal(s.wrap, DEFAULTS.wrap);
 assert.ok(!('evil' in s));
 assert.deepEqual(sanitize(null), { ...DEFAULTS });
+assert.equal(sanitize({ console: 'ps5' }).console, 'ps5');
+assert.equal(sanitize({ console: 'ps6' }).console, 'ps4');
 assert.equal(presetOf(DEFAULTS), 'itemzflow');
 assert.equal(presetOf({ accent: '#123456', highlight: '#123456' }), 'custom');
 

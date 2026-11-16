@@ -1,12 +1,12 @@
 // Section definitions for the top navigation. Flow sections feed the coverflow;
 // panel sections describe their list rows, detail pane and actions.
-import { games, apps, homebrew, store, trophyNames, friends, notifications, media, fileTree, resolvePath, powerOptions, goldhen, sortItems } from './data.js';
+import { games, apps, homebrew, store, trophyNames, friends, notifications, media, fileTree, resolvePath, powerOptions, hens, sortItems } from './data.js';
 import { settings, set, CHOICES, PRESETS, SWATCHES, presetOf, getBgImage, setBgImage, resetAll, favorites } from './settings.js';
 import { coverArt } from './art.js';
 import { mod } from './carousel.js';
 import { esc, icon, btn, tag, toast, simulated, confirmDialog, showSplash, blip } from './ui.js';
 
-export const GH_LOGO = 'assets/goldhen/goldhen-logo.png';
+export const hen = () => hens[settings.console]; // GoldHEN (PS4) or etaHEN (PS5)
 
 const withFav = (it) => ({ ...it, fav: favorites.has(it.id) });
 const pct = (a, b) => Math.round((a / b) * 100);
@@ -21,6 +21,7 @@ const LABELS = {
   sortBy: { name: 'Name', titleId: 'Title ID', recent: 'Recently played' },
   navLabels: { active: 'Active section only', always: 'Always' },
   coverSize: { itemzflow: 'Itemzflow (default)', large: 'Large' },
+  console: { ps4: 'PS4 Pro · GoldHEN', ps5: 'PS5 · etaHEN' },
 };
 
 let pending = null; // custom background shown in the preview, not yet applied
@@ -60,6 +61,8 @@ const ROWS = () => [
   { key: 'showTitleIds', type: 'toggle', title: 'Show Title IDs', desc: 'Show CUSA IDs under the selected title.' },
   { key: 'navLabels', type: 'choice', title: 'Navigation labels', desc: 'Show names under all top-bar icons, or only under the open section.' },
   { key: 'coverSize', type: 'choice', title: 'Cover size', desc: 'Itemzflow size is about 260 px wide at 1080p. Large is 25% bigger.' },
+  { group: 'Console' },
+  { key: 'console', type: 'choice', title: 'Console', sim: true, desc: 'Mock console. PS4 uses GoldHEN, PS5 uses etaHEN. Changes the top-bar badge, the console status and the HEN panel.' },
   { group: 'System' },
   { id: 'resetAll', type: 'action', title: 'Reset all settings', desc: 'Restores every option, colour and background to the defaults.', run: resetEverything },
 ];
@@ -69,7 +72,7 @@ function display(r) {
   const sim = r.sim ? '<span class="mini-sim">SIM</span>' : '';
   switch (r.type) {
     case 'toggle': return { valueHTML: `${sim}<span class="switch${v ? ' on' : ''}"><i></i></span>`, text: v ? 'On' : 'Off' };
-    case 'choice': return { value: LABELS[r.key][v], text: LABELS[r.key][v] };
+    case 'choice': return { valueHTML: `${sim}<span class="val">${esc(LABELS[r.key][v])}</span>`, text: LABELS[r.key][v] };
     case 'range': return { valueHTML: `${bar(v)}<span class="val">${v}${r.unit}</span>`, text: `${v}${r.unit}` };
     case 'color': return { valueHTML: `<span class="chip" style="background:${v}"></span><span class="val">${v.toUpperCase()}</span>`, text: v.toUpperCase() };
     case 'preset': { const p = PRESETS[presetOf(settings)]?.label ?? 'Custom'; return { value: p, text: p }; }
@@ -321,43 +324,48 @@ const powerSection = {
   },
 };
 
-// -------------------------------------------------------------- GoldHEN ---
-const ghLogo = () => `<img class="gh-logo-img" src="${GH_LOGO}" alt="GoldHEN logo">`;
-const goldhenSection = {
-  id: 'goldhen', label: 'GoldHEN', icon: 'flask', view: 'panel', kind: 'sim',
-  items: () => [
-    { id: 'status', title: 'Status', icon: 'check', valueHTML: `<span class="dot ok"></span><span class="val">${esc(goldhen.status)}</span>` },
-    { group: 'Plugins' },
-    ...goldhen.plugins.map((p) => ({ title: p.name, sub: p.desc, icon: 'plugin', plugin: p, valueHTML: `<span class="switch${p.enabled ? ' on' : ''}"><i></i></span>` })),
-    { group: 'Tools' },
-    { id: 'cheats', title: 'Cheat Menu', icon: 'flask', sub: 'In-game cheat overlay' },
-    { id: 'patches', title: 'Game Patches', icon: 'file', sub: 'XML patches in /data/GoldHEN/patches' },
-    { id: 'debug', title: 'Debug Settings', icon: 'settings', sub: 'System debug menu' },
-    { group: 'About' },
-    { id: 'about', title: 'About GoldHEN', icon: 'info' },
-  ],
+// ------------------------------------------------- GoldHEN / etaHEN ---
+// One panel; content follows Settings → Console (PS4 = GoldHEN, PS5 = etaHEN).
+const henSection = {
+  id: 'goldhen', get label() { return hen().name; }, icon: 'flask', view: 'panel', kind: 'sim',
+  items: () => {
+    const h = hen();
+    return [
+      { id: 'status', title: 'Status', icon: 'check', valueHTML: `<span class="dot ok"></span><span class="val">${esc(h.status)}</span>` },
+      { group: 'Plugins' },
+      ...h.plugins.map((p) => ({ title: p.name, sub: p.desc, icon: 'plugin', plugin: p, valueHTML: `<span class="switch${p.enabled ? ' on' : ''}"><i></i></span>` })),
+      { group: 'Tools' },
+      { id: 'cheats', title: 'Cheat Menu', icon: 'flask', sub: 'In-game cheat overlay' },
+      { id: 'patches', title: 'Game Patches', icon: 'file', sub: `Patches in ${h.dir}/patches` },
+      { id: 'debug', title: 'Debug Settings', icon: 'settings', sub: 'System debug menu' },
+      { group: 'About' },
+      { id: 'about', title: `About ${h.name}`, icon: 'info' },
+    ];
+  },
   detail(it) {
-    const hero = `<div class="gh-hero">${ghLogo()}<div><div class="status-pill"><span class="dot ok"></span>${esc(goldhen.status)} ${tag('sim')}</div><div class="gh-ver">Version ${esc(goldhen.version)}</div></div></div>`;
+    const h = hen();
+    const hero = `<div class="gh-hero"><img class="gh-logo-img" src="${h.logo}" alt="${esc(h.name)} logo"><div><div class="status-pill"><span class="dot ok"></span>${esc(h.status)} ${tag('sim')}</div>
+      <div class="gh-ver">${esc(h.name)} ${esc(h.version)} · ${esc(h.console)}</div></div></div>`;
     if (it.id === 'status') {
-      return `${hero}${kv([['Status', `${goldhen.status} (mock)`], ['Version', goldhen.version], ['Firmware', goldhen.firmware], ['Uptime', goldhen.since], ['Plugins loaded', String(goldhen.plugins.filter((p) => p.enabled).length)]])}
-        <div class="chips">${goldhen.features.map((f) => `<span>${esc(f)}</span>`).join('')}</div>
+      return `${hero}${kv([['Status', `${h.status} (mock)`], ['Version', h.version], ['Console', h.console], ['Firmware', h.firmware], ['Uptime', h.since], ['Plugins loaded', String(h.plugins.filter((p) => p.enabled).length)]])}
+        <div class="chips">${h.features.map((f) => `<span>${esc(f)}</span>`).join('')}</div>
         <p class="note">Stage 1 is visual only: nothing is sent to a console and no payloads are run.</p>`;
     }
-    if (it.plugin) return `${hero}<h2>${esc(it.plugin.name)}</h2><p>${esc(it.plugin.desc)}</p>${kv([['State', it.plugin.enabled ? 'Enabled' : 'Disabled'], ['File', `/data/GoldHEN/plugins/${it.plugin.name}.prx`]])}<p class="note">←/→ or ✕ toggles the mock state.</p>`;
+    if (it.plugin) return `${hero}<h2>${esc(it.plugin.name)}</h2><p>${esc(it.plugin.desc)}</p>${kv([['State', it.plugin.enabled ? 'Enabled' : 'Disabled'], ['File', `${h.dir}/plugins/${it.plugin.name}.${h.ext}`]])}<p class="note">←/→ or ✕ toggles the mock state.</p>`;
     if (it.id === 'about') {
-      return `${hero}<h2>About GoldHEN</h2><p>GoldHEN is a PS4 homebrew enabler by SiSTRo. VantaFlow shows a mock status panel only; real GoldHEN integration is researched separately in a later stage.</p>
-        <p class="note">Logo: official GoldHEN wordmark with a gold star on each side, as specified by the project owner.</p>`;
+      return `${hero}<h2>About ${esc(h.name)}</h2><p>${esc(h.about)} VantaFlow shows a mock status panel only; real integration is researched separately in a later stage.</p>
+        <p class="note">Switch between GoldHEN (PS4) and etaHEN (PS5) in Settings → Console.</p>`;
     }
     return `${hero}<h2>${esc(it.title)}</h2><p>${esc(it.sub)}.</p>${cta('Open')}`;
   },
-  adjust(it, dir) {
+  adjust(it) {
     if (!it.plugin) return false;
     it.plugin.enabled = !it.plugin.enabled;
     return true;
   },
   activate(it) {
     if (it.plugin) { it.plugin.enabled = !it.plugin.enabled; toast('Simulated', `${it.plugin.name} ${it.plugin.enabled ? 'enabled' : 'disabled'} (mock only).`, 'sim'); }
-    else if (it.id !== 'status' && it.id !== 'about') simulated(`Opening GoldHEN ${it.title}`);
+    else if (it.id !== 'status' && it.id !== 'about') simulated(`Opening ${hen().name} ${it.title}`);
   },
 };
 
@@ -378,5 +386,5 @@ export const SECTIONS = [
   filesSection,
   flow('homebrew', 'Homebrew Applications', 'Homebrew', 'flask', 'square', 'homebrew apps', homebrew),
   powerSection,
-  goldhenSection,
+  henSection,
 ];

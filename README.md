@@ -74,7 +74,7 @@ The design was built from Itemzflow's own source code ([LightningMods/Itemzflow]
 | Background | clear colour `#1F1F1F` + animated "PS symbols" shader; optional background image | VantaFlow's own shader with the same idea (glowing controller-symbol outlines), `#1F1F1F` plain mode, custom image |
 | Colours | selection `rgb(29,134,240)`, panel grey `rgb(66,66,66)`, white Helvetica text | Same defaults |
 
-VantaFlow additions: the top navigation bar, profile, clock, console status, storage, GoldHEN panel, toasts and the extra sections.
+VantaFlow additions: the top navigation bar, profile, clock, console status, storage, GoldHEN / etaHEN panel, toasts and the extra sections.
 
 ---
 
@@ -110,7 +110,8 @@ js/
   art.js              Procedural placeholder cover art and app icons (SVG)
   data.js             All mock data (games, apps, homebrew, store, friends, files, GoldHEN status…)
 tests/logic.test.mjs  Node self-check for the DOM-free logic
-assets/goldhen/       Official GoldHEN logo (goldhen-logo.png)
+assets/goldhen/       Official GoldHEN logo (goldhen-logo.png), PS4
+assets/etahen/        Official etaHEN logo (etahen-logo.jpg), PS5
 assets/README.md      Where to drop real cover art; how the logo was prepared
 ```
 
@@ -152,6 +153,7 @@ Cover art: if a game entry has `cover` (box art) or an app has `iconImage`, that
 - **Sound:** interface sounds (Web Audio tones), volume, background music (stored only; simulated).
 - **Navigation:** carousel wrap-around, confirm with ○ (controller), sort order, button prompts.
 - **Display:** 12/24-hour clock, Title IDs, navigation labels, cover size.
+- **Console (mock):** PS4 Pro with GoldHEN, or PS5 with etaHEN.
 - **Reset all settings.**
 
 ---
@@ -169,16 +171,21 @@ Every simulated screen carries a yellow **SIMULATED** tag, and every simulated a
 | Favourites (saved in `localStorage`) | Media playback |
 | File Manager folder browsing (mock tree) | Opening files |
 | "Reload VantaFlow" in Power Options | Rest mode, restart, power off, close |
-| Clock (uses this computer's time) | GoldHEN status, plugins, tools |
+| Clock (uses this computer's time) | GoldHEN / etaHEN status, plugins, tools |
 | | Profile, console model, firmware, storage figures |
 
 ---
 
-## 8. GoldHEN section
+## 8. GoldHEN / etaHEN section
 
-The GoldHEN panel (top-bar badge, or L1/R1 to the last section) shows a mock status indicator, version, uptime, plugins, tools and the GoldHEN feature list.
+The homebrew-enabler panel (top-bar badge, or L1/R1 to the last section) shows a mock status indicator, version, uptime, plugins, tools and feature list. It follows **Settings → Console**:
 
-**About the logo:** `assets/goldhen/goldhen-logo.png` is the official GoldHEN logo supplied by the project owner. Its white background was made transparent and, as the owner specified, a gold star was added on each side of the words in the logo's own face and shadow colours. The lettering itself is unchanged. It appears in the GoldHEN panel and the top-bar badge.
+- **PS4 Pro → GoldHEN** (default)
+- **PS5 → etaHEN**
+
+The switch also changes the top-bar badge logo and the console status text. Data for both lives in `hens` in `js/data.js`.
+
+**About the logo:** `assets/goldhen/goldhen-logo.png` is the official GoldHEN logo supplied by the project owner. Its white background was made transparent and, as the owner specified, a gold star was added on each side of the words in the logo's own face and shadow colours. The lettering itself is unchanged. `assets/etahen/etahen-logo.jpg` is the official etaHEN icon supplied by the project owner, used unaltered.
 
 ---
 

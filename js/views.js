@@ -10,7 +10,7 @@ import { esc, icon, btn, tag, blip, toast, simulated, confirmDialog, showSplash 
 // Game-page options, as in Itemzflow's ITEM_PAGE (trimmed to what makes sense in Stage 1).
 const OPTIONS = {
   launch: { label: () => 'Launch', desc: 'Launches the selected title.', sim: true, run: launch },
-  trainers: { label: () => 'Trainers & Cheats', desc: 'Cheats and patches through GoldHEN. Visual only in Stage 1.', sim: true, run: (it) => simulated(`Loading cheats for ${it.title}`) },
+  trainers: { label: () => 'Trainers & Cheats', desc: 'Cheats and patches through the homebrew enabler (GoldHEN on PS4, etaHEN on PS5). Visual only in Stage 1.', sim: true, run: (it) => simulated(`Loading cheats for ${it.title}`) },
   favorite: { label: (it) => (it.fav ? 'Remove from Favorites' : 'Add to Favorites'), desc: 'Marks this title with a heart. Saved in this browser.', run: favorite },
   hide: { label: () => 'Hide App', desc: 'Hides the title from the console app database.', sim: true, run: (it) => simulated(`Hiding ${it.title}`) },
   uninstall: { label: () => 'Uninstall', desc: 'Removes the title and its add-ons.', sim: true, run: uninstall },

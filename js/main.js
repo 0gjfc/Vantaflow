@@ -1,10 +1,10 @@
 // VantaFlow boot: top bar, section routing, focus (nav bar vs content), theme, clock.
-import { SECTIONS, GH_LOGO } from './sections.js';
+import { SECTIONS, hen } from './sections.js';
 import { FlowView, PanelView } from './views.js';
 import { createBackground } from './background.js';
 import { initInput } from './input.js';
 import { settings, onChange, getBgImage } from './settings.js';
-import { profile, consoleStatus, notifications } from './data.js';
+import { profile, notifications } from './data.js';
 import { esc, icon, btn, blip, dialogHandle, splashHandle } from './ui.js';
 import { mod } from './carousel.js';
 
@@ -40,11 +40,18 @@ const view = () => (byId[current].view === 'flow' ? flow : panel);
 $('.profile').innerHTML = `<div class="avatar">${esc(profile.name[0])}</div><div>${esc(profile.name)}<small>Level ${profile.level}</small></div>`;
 $('#nav').innerHTML = SECTIONS.filter((s) => s.id !== 'goldhen').map((s) => `<button class="nav-btn" data-id="${s.id}" title="${esc(s.label)}" aria-label="${esc(s.label)}">
   ${icon(s.icon)}<span class="lbl">${esc(s.short || s.label)}</span>${s.id === 'notifications' ? '<span class="badge"></span>' : ''}</button>`).join('');
-$('#console-status').innerHTML = `<span class="dot ok"></span>${esc(consoleStatus.model)} · FW ${esc(consoleStatus.firmware)} <span class="mock">MOCK</span>`;
-$('#gh-badge').innerHTML = `<img class="gh-mini-img" src="${GH_LOGO}" alt="GoldHEN"><span class="dot ok"></span>`;
 document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => { goto(b.dataset.id); setFocus('content'); }));
 
 function refreshChrome() {
+  const h = hen();
+  const hb = $('#gh-badge');
+  if (hb.dataset.console !== settings.console) { // GoldHEN (PS4) or etaHEN (PS5)
+    hb.dataset.console = settings.console;
+    hb.innerHTML = `<img class="gh-mini-img" src="${h.logo}" alt=""><span class="dot ok"></span>`;
+    hb.title = `${h.name} (mock status)`;
+    hb.setAttribute('aria-label', h.name);
+    $('#console-status').innerHTML = `<span class="dot ok"></span>${esc(h.console)} · FW ${esc(h.firmware)} <span class="mock">MOCK</span>`;
+  }
   const unread = notifications.filter((n) => !n.read).length;
   const badge = $('.nav-btn[data-id="notifications"] .badge');
   badge.textContent = unread || '';
@@ -116,6 +123,7 @@ function applyTheme(patch = {}) {
   b.toggle('hide-tid', !settings.showTitleIds);
   bg.update({ mode: settings.bgMode, image: getBgImage(), dim: settings.bgDim, animated: settings.bgAnimated && animate() });
   tickClock();
+  refreshChrome();
   if ('sortBy' in patch && byId[current].view === 'flow') flow.show(byId[current]);
   else if ('wrap' in patch || 'coverSize' in patch) flow.cf.refresh();
   updatePrompts();
