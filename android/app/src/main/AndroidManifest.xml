@@ -3,6 +3,10 @@
      VantaFlow contacts only private (local network) addresses; see docs/connectivity.md. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Install & recovery: lets VantaFlow hand its OWN update to Android's installer. Android
+         grants it only after the user allows "Install unknown apps" for VantaFlow, and still asks
+         for confirmation of every installation. Used for nothing else. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
         android:label="VantaFlow"
         android:allowBackup="false"
@@ -13,5 +17,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver android:name=".InstallResultReceiver" android:exported="false" />
     </application>
 </manifest>

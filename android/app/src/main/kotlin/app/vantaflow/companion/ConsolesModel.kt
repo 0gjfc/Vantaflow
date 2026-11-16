@@ -84,6 +84,16 @@ class ConsolesModel internal constructor(
         if (connected.isNotEmpty()) work("Checking saved consoles…") { connected.forEach { runDetect(it.id) } }
     }
 
+    // After settings were restored from a backup: read the saved consoles and selection again.
+    fun reloadSaved() {
+        realConsoles = lan.list()
+        active = prefs.getString("active-console", null)
+        results = results.filterKeys { !isReal(it) }
+        val (connected, disconnected) = realConsoles.partition { lan.saved(it.id)?.connected == true }
+        disconnected.forEach { results = results + (it.id to lanService.detect(it.id)) }
+        if (connected.isNotEmpty()) work("Checking saved consoles…") { connected.forEach { runDetect(it.id) } }
+    }
+
     fun isReal(id: String) = LanConsoles.isLan(id)
     fun detection(id: String) = results[id]
     fun compatibility(id: String): CompatibilityResult = engine.evaluate(results[id])

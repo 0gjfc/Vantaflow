@@ -58,12 +58,12 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 // shared/design-tokens.json
-private val Accent = Color(0xFF1D86F0)
-private val Background = Color(0xFF1F1F1F)
-private val PanelGrey = Color(0xFF424242)
-private val Dim = Color(0xBFFFFFFF)
-private val Faint = Color(0x80FFFFFF)
-private val StatusColor = mapOf(
+internal val Accent = Color(0xFF1D86F0)
+internal val Background = Color(0xFF1F1F1F)
+internal val PanelGrey = Color(0xFF424242)
+internal val Dim = Color(0xBFFFFFFF)
+internal val Faint = Color(0x80FFFFFF)
+internal val StatusColor = mapOf(
     CompatStatus.COMPATIBLE to Color(0xFF3ECF6E), CompatStatus.PARTIAL to Color(0xFFF0B429),
     CompatStatus.UNSUPPORTED to Color(0xFFE0434F), CompatStatus.UNKNOWN to Color(0xFF9AA4B2),
     CompatStatus.NOT_DETECTED to Color(0xFF8A8A8A),
@@ -76,14 +76,14 @@ const val PRIVACY = "VantaFlow sends one discovery request (SRCH) for PS4 on UDP
     "system version and whether they are on or in rest mode. Nothing leaves your local network, no ports are scanned, " +
     "and only the consoles you then pick are saved, on this phone. The running game and console ID in the replies are discarded."
 
-private fun whenText(iso: String?) = iso?.let {
+internal fun whenText(iso: String?) = iso?.let {
     runCatching { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault()).format(Instant.parse(it)) }.getOrDefault(it)
 } ?: "—"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { VantaFlowApp(viewModel()) }
+        setContent { VantaFlowApp(viewModel(), viewModel()) }
     }
 }
 
@@ -95,20 +95,23 @@ private val Colors = darkColorScheme(
 )
 
 @Composable
-internal fun VantaFlowApp(m: ConsolesModel) = MaterialTheme(colorScheme = Colors) {
-    Surface(Modifier.fillMaxSize(), color = Background, contentColor = Color.White) { App(m) }
+internal fun VantaFlowApp(m: ConsolesModel, s: SetupModel) = MaterialTheme(colorScheme = Colors) {
+    Surface(Modifier.fillMaxSize(), color = Background, contentColor = Color.White) { App(m, s) }
 }
 
 @Composable
-private fun App(m: ConsolesModel) {
+private fun App(m: ConsolesModel, s: SetupModel) {
     var open by remember { mutableStateOf<String?>(null) }
+    var setup by remember { mutableStateOf(false) }
+    s.onSettingsRestored = m::reloadSaved
     var consent by remember { mutableStateOf(false) }
     var addIp by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         TopBar(m)
         m.busy?.let { Text(it, color = Dim, modifier = Modifier.padding(horizontal = 20.dp)); LinearProgressIndicator(Modifier.fillMaxWidth().padding(20.dp, 6.dp)) }
         val id = open
-        if (id == null) ConsoleList(m, onOpen = { open = it }, onDiscover = { consent = true }, onAdd = { addIp = true })
+        if (setup) SetupScreen(s, onBack = { setup = false })
+        else if (id == null) ConsoleList(m, onOpen = { open = it }, onDiscover = { consent = true }, onAdd = { addIp = true }, onSetup = { setup = true })
         else {
             BackHandler { open = null }
             ConsoleDetail(m, id, onBack = { open = null })
@@ -141,6 +144,14 @@ private fun App(m: ConsolesModel) {
         )
     }
     if (addIp) AddByIpDialog(onDismiss = { addIp = false }, onAdd = { addIp = false; m.addByAddress(it) })
+    s.notice?.let { n ->
+        AlertDialog(
+            onDismissRequest = { s.notice = null },
+            title = { Text(n.title, color = if (n.ok) Color.White else StatusColor.getValue(CompatStatus.PARTIAL)) },
+            text = { Text(n.text) },
+            confirmButton = { TextButton({ s.notice = null }) { Text("OK") } },
+        )
+    }
     m.notice?.let { n ->
         AlertDialog(
             onDismissRequest = { m.notice = null },
@@ -171,11 +182,11 @@ private fun Chip(status: CompatStatus) = Text(status.label, color = StatusColor.
     modifier = Modifier.background(PanelGrey.copy(alpha = .5f), RoundedCornerShape(4.dp)).padding(8.dp, 3.dp))
 
 @Composable
-private fun Tag(text: String, color: Color) = Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+internal fun Tag(text: String, color: Color) = Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold,
     modifier = Modifier.background(color.copy(alpha = .15f), RoundedCornerShape(3.dp)).padding(6.dp, 2.dp))
 
 @Composable
-private fun Group(title: String) = Text(title.uppercase(), color = Accent, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
+internal fun Group(title: String) = Text(title.uppercase(), color = Accent, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
     modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 6.dp))
 
 @Composable
@@ -199,7 +210,7 @@ private fun ConsoleRow(m: ConsolesModel, ref: ConsoleRef, onOpen: (String) -> Un
 }
 
 @Composable
-private fun ConsoleList(m: ConsolesModel, onOpen: (String) -> Unit, onDiscover: () -> Unit, onAdd: () -> Unit) {
+private fun ConsoleList(m: ConsolesModel, onOpen: (String) -> Unit, onDiscover: () -> Unit, onAdd: () -> Unit, onSetup: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             Group("Your consoles")
@@ -211,19 +222,25 @@ private fun ConsoleList(m: ConsolesModel, onOpen: (String) -> Unit, onDiscover: 
             if (m.realConsoles.isEmpty()) Text("No consoles saved yet.", color = Dim, modifier = Modifier.padding(20.dp, 8.dp))
         }
         items(m.realConsoles, key = { it.id }) { ConsoleRow(m, it, onOpen) }
+        item {
+            Group("Install & recovery")
+            Row(Modifier.fillMaxWidth().clickable(onClick = onSetup).padding(20.dp, 12.dp)) {
+                Column { Text("Install & recovery…", fontSize = 18.sp); Text("Updates, backups, recovery, cleanup", color = Faint, fontSize = 13.sp) }
+            }
+        }
         item { Group("Demo consoles — demonstration data, no console contacted") }
         items(m.demoConsoles, key = { it.id }) { ConsoleRow(m, it, onOpen) }
     }
 }
 
 @Composable
-private fun Field(label: String, value: String) = Row(Modifier.padding(vertical = 4.dp)) {
+internal fun Field(label: String, value: String) = Row(Modifier.padding(vertical = 4.dp)) {
     Text(label, color = Faint, modifier = Modifier.width(150.dp))
     Text(value)
 }
 
 @Composable
-private fun Section(title: String, lines: List<String>) {
+internal fun Section(title: String, lines: List<String>) {
     if (lines.isEmpty()) return
     Text(title.uppercase(), color = Faint, fontSize = 13.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 18.dp, bottom = 6.dp))
     lines.forEach { Text("• $it", color = Dim, fontSize = 14.sp, modifier = Modifier.padding(vertical = 2.dp)) }

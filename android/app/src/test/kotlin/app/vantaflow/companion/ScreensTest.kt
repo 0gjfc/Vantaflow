@@ -66,7 +66,7 @@ class ScreensTest {
         Ps5Provider(port = ps5.socket.localPort, timeoutMs = 400),
         discoveryTargets = { listOf("127.0.0.1") },
         allowLoopback = true,
-    ).also { m -> compose.setContent { VantaFlowApp(m) } }
+    ).also { m -> compose.setContent { VantaFlowApp(m, SetupModel(RuntimeEnvironment.getApplication() as Application, FakeInstaller(), 34)) } }
 
     private fun waitFor(text: String) = compose.waitUntil(5000) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
     private fun click(text: String) = compose.onNodeWithText(text).performClick()
