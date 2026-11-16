@@ -1,6 +1,15 @@
-# VantaFlow — Stage 4.1: real console connectivity (read-only), validation pass
+# VantaFlow — Stage 5: installation and recovery
 
 VantaFlow is an Itemzflow-inspired PlayStation dashboard. Itemzflow's horizontal coverflow is the centrepiece, and a subtle top navigation bar adds the other PlayStation sections.
+
+**Stage 5 status:** VantaFlow installs, updates, repairs and removes itself on the desktop from VantaFlow packages. Every change goes through these steps:
+
+- a confirmation screen saying what happens, what is affected, whether data could change, whether a backup is made, and whether it can be undone;
+- an automatic, verified backup of settings and app files first;
+- a journal entry, so an interruption is found later;
+- a check of the result before success is reported.
+
+Interrupted or failed operations are rolled back or recovered without erasing settings. Cleanup removes only VantaFlow's marked temporary files, after a preview. The Android companion updates itself through Android's own installer: it checks the APK, explains the permission and backs up settings first. That code is tested with a simulated installer, **not yet on a phone**. For the PS4, VantaFlow checks its package and copies it to a USB drive. **Installing it on the console is not done or verified by VantaFlow, and no VantaFlow PS4 package exists yet.** Details: [docs/installation.md](docs/installation.md).
 
 **Stage 4 status:** VantaFlow can find and identify the user's own PS4 and PS5 on the local network, read-only, through the PlayStation Device Discovery Protocol (DDP), with separate PS4 and PS5 providers on the desktop and in the Android companion core. It verifies the console type, name and power state, and on a PS4 the firmware (confirmed below 10.00). It cannot read the model, the PS5 firmware number or GoldHEN / etaHEN status: no documented read-only method exists, so these are shown as **not available** and **Unsupported detection method**, and a real console is rated **Unknown**, never Compatible. All of this is tested against fake consoles, **not yet on physical hardware**. Instructions for your PS4 and PS5 are in [docs/physical-testing.md](docs/physical-testing.md), with a read-only check tool, `tools/console-check.mjs`. The Android companion **compiles** and its screens pass tests against fake consoles (see [android/README.md](android/README.md#build-and-install)). The demonstration consoles stay, clearly labelled.
 
@@ -14,7 +23,7 @@ VantaFlow is an Itemzflow-inspired PlayStation dashboard. Itemzflow's horizontal
 
 **Stage 3 (unchanged):** PS4 and PS5 are separate platform modules with their own models, homebrew environment (GoldHEN / etaHEN), customization capabilities and compatibility rules. A compatibility engine rates a console from researched, dated release data, a detection architecture runs with a mock provider, a **Consoles** page (opened from the console status in the top bar) manages consoles, PS4 and PS5 profiles keep separate console settings while the VantaFlow account is shared by default, and an Android companion core shares the same data and rules. Everything that would need a console is still **demonstration data**, clearly labelled. Nothing talks to a console, installs packages, runs payloads or touches system files.
 
-Documents: [**connectivity (Stage 4)**](docs/connectivity.md) · [**physical testing (Stage 4.1)**](docs/physical-testing.md) · [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
+Documents: [**installation and recovery (Stage 5)**](docs/installation.md) · [**connectivity (Stage 4)**](docs/connectivity.md) · [**physical testing (Stage 4.1)**](docs/physical-testing.md) · [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
 
 ---
 
@@ -42,10 +51,12 @@ node tests/profiles.test.mjs                           # console profiles and th
 
 node tests/connectivity.test.mjs                       # Stage 4: DDP, providers, discovery, agent API, reliability (fake consoles)
 node tools/console-check.mjs 192.168.1.20              # Stage 4.1: read-only check of YOUR console (see docs/physical-testing.md)
+node tests/install.test.mjs                            # Stage 5: install, backups, recovery, cleanup, PS4 USB copy (temporary folders)
 
 node desktop/server.mjs &                              # end-to-end in a real browser (needs Playwright installed)
 node tests/ui-smoke.cjs http://127.0.0.1:8080/
 node tests/ui-consoles.cjs                             # Stage 4 Consoles page with fake consoles (starts its own agent)
+node tests/ui-setup.cjs [screenshot-folder]            # Stage 5 Install & Recovery screens (starts its own agent, temporary data folder)
 
 cd android && ./gradlew :core:test                     # Android core: same vectors, Kotlin engine, connectivity (JDK 17+)
 cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug   # Android screens + APK (needs the Android SDK)
@@ -60,7 +71,19 @@ node tools/build-docs.mjs                              # regenerate docs/compati
   - 10 000 mutated replies produce no false identification;
   - demo data never claims a DDP source;
   - the physical-test tool is covered.
+- `tests/install.test.mjs` (132 checks, **simulated** in temporary folders with mock packages; interruptions are real process stops):
+  - successful, cancelled, failed (with rollback) and interrupted installations;
+  - existing-installation detection and repair;
+  - package validation;
+  - backup creation, integrity, restoration and corruption;
+  - recovery after failed updates;
+  - removal;
+  - cleanup preview and confirmation;
+  - preservation of user files, settings and profiles;
+  - PS4 package checks and USB copy.
+- `tests/ui-setup.cjs` (15 checks, real browser and agent, **simulated** installations): the Install & Recovery screens end to end, including the failed update, the interrupted update with recovery, settings restore, a damaged backup, cleanup, the PS4 copy and removal.
 - `tests/ui-consoles.cjs` (16 checks): no traffic before consent, the consent text, discovery results, real-console detail (verified vs not available, HEN status never guessed), making a real console active (top bar, GoldHEN page), disconnect (no traffic), connect and refresh, invalid and internet addresses refused, an address that does not answer stays "not identified", remove, restart re-check, behaviour without the agent, and (Stage 4.1) failed discovery saving nothing and demo / real labels never mixing.
+- `android/app` Stage 5 `SetupScreenTest` (9, Robolectric, **simulated installer**) and `android/core` `SetupTest` (6): update verified by version, cancel, failure, refused packages, permission explained, interrupted update recovered, backup and restore, cleanup.
 - `android/app` (7 tests, Robolectric): the real Compose screens with the shared JSON and fake consoles. They cover demo consoles and their expected statuses, add by IP, invalid addresses, a silent address that stays not identified, disconnect without traffic, and discovery that asks first. One more test renders screenshots.
 - `android/core` (17 tests): the Kotlin engine gives the same status as the desktop for every mock console; the account model is shared unless separate accounts are on; Stage 4 `ConnectivityTest` repeats the DDP samples, address rules, PS4/PS5 providers, timeouts, network errors, discovery, saved consoles (connect, disconnect without traffic, remove) and engine integration.
 
@@ -181,6 +204,7 @@ js/
     background.js          Animated shader / plain / image background
     art.js                 Generated placeholder covers and icons
     ui.js                  Icons, glyphs, tags, widgets, toasts, sounds, music, dialogs
+desktop/setup/             Stage 5: data folder, packages, backups, installer/recovery, cleanup, API, operation runner
 desktop/                   Local agent (Node, no dependencies), Stage 4
   server.mjs               Serves the app and /api/agent, /api/discover, /api/probe on 127.0.0.1
   agent/ddp.mjs            PlayStation Device Discovery Protocol: format only
@@ -199,6 +223,7 @@ android/                   Android companion: core module (Kotlin) + Compose app
 docs/                      Compatibility, customization, detection, data models, safety
 tools/build-docs.mjs       Generates docs/compatibility.md and docs/customization.md
 tools/console-check.mjs    Read-only check of your own PS4 / PS5 (physical testing)
+tools/build-package.mjs    Builds a VantaFlow desktop package (.vfpkg) from this folder
 assets/goldhen/            Official GoldHEN logo
 assets/etahen/             Official etaHEN logo
 tests/                     logic, compat, profiles, connectivity (Node); ui-smoke.cjs, ui-consoles.cjs (Playwright, optional); fake-console.mjs
@@ -250,9 +275,17 @@ VantaFlow additions: the top navigation bar, profile, clock, console status, sto
 
 Plain HTML, CSS and JavaScript ES modules, with no framework, build tools or runtime packages. CSS 3D reproduces Itemzflow's coverflow geometry directly, the state is small enough not to need React or Vue, and the data shapes and layout numbers port one-to-one to a native renderer later. Only the animated background uses WebGL, and it falls back to the plain background.
 
-## 10. Boundaries kept (Stage 4)
+## 10. Boundaries kept (Stage 5)
 
-No jailbreak exploits, firmware exploitation, payload execution, authentication or DRM bypass, unauthorised console access, firmware or protected-file changes, PKG or APK installation, Y2JB, automatic updates or downgrades, automatic console modification or real power control. Console communication is limited to the read-only DDP `SRCH` request, on the local network only, to consoles the user chose, after the user agreed. WAKEUP / LAUNCH, Remote Play registration, and probing homebrew ports are not implemented. No credentials are needed or stored; nothing is sent outside the local network. Rules for any future console operation (compatibility gate, explicit authorisation, dry run, backup, undo) are in [docs/safety-and-recovery.md](docs/safety-and-recovery.md).
+There is no jailbreak exploit, firmware exploitation, payload execution, authentication or DRM bypass, unauthorised console access, firmware or protected-file change, Y2JB, automatic update or downgrade, automatic console modification or real power control.
+
+Package installation is limited to **VantaFlow's own packages**:
+
+- desktop: into VantaFlow's own folder;
+- Android: through Android's installer, with Android's confirmation;
+- PS4: a verified copy to a USB drive you choose, which you then install on the console yourself.
+
+Each one needs explicit confirmation. Console communication is limited to the read-only DDP `SRCH` request, on the local network only, to consoles the user chose, after the user agreed. WAKEUP / LAUNCH, Remote Play registration, and probing homebrew ports are not implemented. No credentials are needed or stored; nothing is sent outside the local network. Rules for any future console operation (compatibility gate, explicit authorisation, dry run, backup, undo) are in [docs/safety-and-recovery.md](docs/safety-and-recovery.md).
 
 ## 11. Stage 3 review decisions
 
@@ -269,6 +302,7 @@ No jailbreak exploits, firmware exploitation, payload execution, authentication 
 | **Implemented and tested with fake consoles (Stage 4)** | DDP parsing, PS4 / PS5 identification, PS4 firmware decoding, discovery, manual IP, connect / disconnect / refresh / remove / make active, errors and timeouts, engine integration — desktop and Android core. |
 | **Implemented, not tested on physical hardware** | Everything that talks to a real console, on desktop and Android. Instructions: [docs/physical-testing.md](docs/physical-testing.md). |
 | **Android companion** | Compiles (APK); screens tested with Robolectric and fake consoles; not yet run on a phone. |
+| **Installation and recovery (Stage 5)** | Desktop: implemented and tested (simulated, temporary folders). Android: implemented, tested with a simulated installer, not run on a phone. PS4: package check and USB copy tested with mock packages; console installation not done or verified by VantaFlow; no VantaFlow PS4 package exists. |
 | **Unsupported (no documented read-only method)** | Console model, PS5 firmware number, GoldHEN / etaHEN status and version, storage. |
 | **Simulated** | The demonstration consoles and their detection results; GoldHEN / etaHEN plugins and tools; launching, power and other console actions. |
 | **Unverified / unknown** | GoldHEN betas 2.4b5–2.4b16.2 (not published as releases); etaHEN releases without firmware statements (never rated compatible); release asset file names; PS4 profile customization; PS4 system-version layout from 10.00; PS5 system-version mapping. |

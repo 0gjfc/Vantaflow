@@ -12,6 +12,22 @@ The Android app is a separate application from the desktop app. They share **dat
 
 Unsupported detection features are labelled the same way as on the desktop: Model "Not available", PS5 firmware "Not available", GoldHEN / etaHEN "Unsupported detection method". The app never claims GoldHEN or etaHEN detection.
 
+## Install & recovery (Stage 5)
+
+The **Install & recovery** screen is at the end of "Your consoles". It covers:
+
+- **Update from an APK file:** VantaFlow checks the file first (same app, same signing key, newer version, Android version). It explains the "Install unknown apps" permission, backs up the settings, and hands the APK to Android's `PackageInstaller`, which always shows its own confirmation. Success is reported only when Android reports the new version.
+- **Backups:** back up the saved consoles and the active console; restore them only from a verified backup, with a read-back check; delete a backup.
+- **Recovery:** finds an update that did not finish (even if Android replaced the app meanwhile) and closes it without touching settings.
+- **Cleanup:** removes VantaFlow's own APK copies and unfinished installer sessions, after a preview.
+
+Code:
+
+- `core/setup/` holds the rules: `Backups.kt`, `Apk.kt`, `Journal.kt`, `Cleanup.kt` (JVM tests: `SetupTest`).
+- `app/` holds the Android parts: `Installer.kt` (PackageInstaller), `SetupModel.kt`, `SetupScreen.kt` (Robolectric tests with a **simulated** installer: `SetupScreenTest`).
+
+The only new permission is `REQUEST_INSTALL_PACKAGES`, which Android grants only after you allow it. The app has **not yet installed a real update on a phone**; to try it, install an older debug build, then update it with a newer APK signed with the same key. See [`../docs/installation.md`](../docs/installation.md).
+
 ## Build and install
 
 Requirements: JDK 17 or later and the Android SDK (platform 35). Android Studio installs both. Gradle comes with the project (`gradlew`, Gradle 8.14.3). Plugin versions: Android Gradle Plugin 8.7.3, Kotlin 2.0.21. The first build downloads dependencies from Google's Maven repository and Maven Central.
@@ -41,8 +57,8 @@ export ANDROID_HOME=~/android-sdk
 **Tests:**
 
 ```bash
-./gradlew :core:test                 # 17 tests, no Android SDK needed
-./gradlew :app:testDebugUnitTest     # 7 screen tests (Robolectric, no emulator); screenshots in app/build/screenshots/
+./gradlew :core:test                 # 23 tests, no Android SDK needed
+./gradlew :app:testDebugUnitTest     # 17 screen tests (Robolectric, no emulator); screenshots in app/build/screenshots/
 ```
 
 The app needs only the `INTERNET` permission (for any socket). On the phone, use the same Wi-Fi network as the console; guest networks usually block discovery. Physical tests to run: [`../docs/physical-testing.md`](../docs/physical-testing.md) §4.

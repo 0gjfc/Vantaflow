@@ -21,7 +21,8 @@ const throwsCode = (fn, code, m) => { assert.throws(fn, (e) => e.code === code, 
 const SETUP = new URL('../desktop/setup/', import.meta.url).pathname;
 process.env.VANTAFLOW_TEST = '1';
 
-const temp = (name) => fs.mkdtempSync(path.join(os.tmpdir(), `vantaflow-${name}-`));
+const temps = [];
+const temp = (name) => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), `vantaflow-${name}-`)); temps.push(dir); return dir; };
 function fixtureApp(version) {
   const dir = temp('src');
   const files = { 'index.html': `<!doctype html><title>VantaFlow ${version}</title>`, 'js/main.js': `export const version = '${version}';`, 'desktop/server.mjs': '// server', [`assets/v${version}.txt`]: version };
@@ -315,4 +316,5 @@ const userFile = (p, text = 'my own file') => { fs.mkdirSync(path.dirname(p), { 
   ok(fs.readdirSync(usb2).length === 0 && fs.existsSync(other) && diagnose(d).ok, 'only the partial file is removed; other drive files are untouched');
 }
 
+for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
 console.log(`install.test: ${checks} checks passed (SIMULATED installations in temporary folders with mock packages — not device or console installations)`);

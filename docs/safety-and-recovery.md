@@ -1,5 +1,7 @@
 # Safety, reliability and recovery
 
+> **Stage 5:** installation, backups, the operation journal, recovery and cleanup for VantaFlow's own files are implemented. See [installation.md](installation.md). VantaFlow still changes nothing on a console. The PS4 workflow only copies VantaFlow's own package to a USB drive; you install it on the console.
+
 ## Stage 3 boundaries (kept)
 
 VantaFlow does not modify a console. There is no code for exploits, firmware exploitation, payload execution, authentication or DRM bypass, unauthorised access, firmware or protected-file changes, package (PKG/APK) installation, Y2JB, or automatic updates and downgrades. Detection is mock-only; every console value shown is demonstration data and labelled as such.
