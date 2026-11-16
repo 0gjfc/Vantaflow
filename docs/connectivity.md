@@ -141,33 +141,58 @@ The compatibility engine keeps the Stage 3 strict rules and adds one more: an en
   - does not serve `.git` or `.gradle`.
 - **Nothing external.** No request goes to any server outside the local network.
 
-## 5. Implementation status
+## 5. Test evidence: physical vs fake consoles
+
+**No test has used a physical PS4 or PS5 yet.** The development environment runs in the cloud, outside your network, so it cannot reach a console. All network tests use **fake consoles**: small UDP responders on 127.0.0.1 that replay replies built from the documented format (`shared/ddp-samples.json`, also not captured from a real console). They prove VantaFlow's logic, not that a real console answers this way. Every suite says so in its output.
+
+| Suite | Runs against | Checks | What it covers |
+|---|---|---|---|
+| `tests/connectivity.test.mjs` | Fake consoles (127.0.0.1) | 117 | Shared DDP samples; address rules; PS4 and PS5 providers; firmware decoding (11.00 unconfirmed); wrong type, non-DDP reply, timeout, network error; discovery; agent API (consent, Host check, header check); engine integration (a real console is never Compatible). Stage 4.1: replies from another address are ignored; 10 000 mutated replies give no false identification; demo data never claims a DDP source; the physical-test tool (`tools/console-check.mjs`) |
+| `tests/ui-consoles.cjs` | Fake consoles via the desktop agent, real browser | 16 | Consent, discovery, add by IP, invalid and internet addresses, an address that does not answer, connect / disconnect (no traffic) / refresh / remove / make active, restart. Stage 4.1: failed discovery (silence, incomplete replies) saves nothing; demo and real labels never mix |
+| `tests/ui-smoke.cjs` | Demo consoles (mock data) | 22 | The rest of the interface |
+| `tests/compat.test.mjs`, `profiles`, `logic` | Mock data | 494 + | Compatibility engine and settings |
+| `android/core` `ConnectivityTest` | Fake consoles (127.0.0.1) | 13 | Same DDP samples, address rules, providers, discovery, saved consoles, engine integration. Stage 4.1: reply from another address ignored, 5 000 mutated replies, demo/real separation |
+| `android/core` `SharedVectorsTest` | Mock data | 4 | Kotlin engine agrees with the desktop |
+| `android/app` `ScreensTest` (Robolectric) | Fake consoles + shared JSON as app assets | 6 | The real Compose screens: demo consoles from the shared data with the expected statuses and DEMO labels; add by IP (PS4 identified, read-only, GoldHEN unsupported); invalid addresses; an address that does not answer stays not identified; disconnect stops traffic; discovery asks first and saves only the console picked |
+| `android/app` `ScreenshotsTest` | Same | 1 | Renders the screens to `android/app/build/screenshots/` for visual review |
+| **Physical PS4** | — | **0** | Pending: [physical-testing.md](physical-testing.md) §2–4, tests P4-1 to P4-9, D-1 to D-7, A-1 to A-5 |
+| **Physical PS5** | — | **0** | Pending: same document, tests P5-1 to P5-9 |
+
+The tests were checked against the old code. The reply-from-another-address test fails on the Stage 4 code, which accepted any reply; it passes with the Stage 4.1 fix. It was run that way on both desktop and Android.
+
+### Reliability changes in Stage 4.1
+
+- **A probe of one address accepts replies only from that address.** Stage 4 took the first reply from any address if none came from the probed one. A different device answering, such as a broadcast echo or a second console, could therefore have identified the wrong IP. The transport now drops such replies (`onlyFrom` in `desktop/agent/udp.mjs` and `UdpTransport` in `Lan.kt`).
+- Failed discovery creates nothing. Silence, incomplete replies and network errors produce "No consoles answered", and the saved list stays empty. Tested on desktop and Android.
+- Demonstration consoles and real consoles stay apart:
+  - different ids (`lan-…` only for real consoles);
+  - different groups and labels (DEMO / SIMULATED vs READ-ONLY);
+  - demo data never claims the `ddp` source.
+
+## 6. Implementation status
 
 | Category | Items |
 |---|---|
-| **Implemented and tested** (automated, against fake consoles on 127.0.0.1) | DDP request and reply parsing, firmware decoding and confirmation, PS4 and PS5 identification, wrong-type replies, non-DDP replies, timeouts, network errors, address validation, discovery (one request per generation, non-local replies ignored), the agent API (consent, Host check, header check, invalid addresses), saved consoles with connect, disconnect, refresh, remove and switch active, engine integration (a real console is never Compatible), the desktop Consoles page flows in a real browser, and Android core providers, discovery and saved consoles (Kotlin tests) |
-| **Implemented but not tested on physical hardware** | Everything that talks to a real PS4 or PS5: discovery by broadcast on a real network, probing a real console's address, firmware decoding from a real reply, rest-mode replies, the start-up re-check |
-| **Implemented but not compiled** | Android companion screens (`android/app`). The development environment has no Android SDK (the SDK download was not allowed there). `android/core`, which holds all of their logic, is compiled and tested |
+| **Implemented and tested** (automated, fake consoles only) | Everything listed in §5, on the desktop and in the Android companion (core and screens) |
+| **Implemented, not tested on physical hardware** | Everything that talks to a real PS4 or PS5. Instructions: [physical-testing.md](physical-testing.md) |
 | **Simulated** | The 11 demonstration consoles (labelled DEMO / MOCK / SIMULATED), GoldHEN and etaHEN plugins and tools, game library, storage figures, launching titles, power options |
-| **Unsupported** (no documented read-only method) | Console model (both), PS5 firmware number, GoldHEN status and version, etaHEN status and version, storage |
-| **Unknown** | Whether PS4 firmware 10.00 and later uses the same system-version layout; how PS5 system-version maps to firmware; whether every PS5 firmware still answers DDP from the console's rest mode; behaviour on networks that block broadcast (guest Wi-Fi, client isolation) |
+| **Unsupported** (no documented read-only method; always labelled "Not available" or "Unsupported detection method") | Console model (PS4 and PS5), PS5 firmware number, **GoldHEN status and version**, **etaHEN status and version**, storage |
+| **Unknown** | Whether PS4 firmware 10.00 and later uses the same system-version layout (shown as "not confirmed"); how PS5 system-version maps to firmware; whether consoles answer with Remote Play off or in rest mode; behaviour on networks that block broadcast (guest Wi-Fi, client isolation) |
 
-## 6. Features that still need physical-console testing
+GoldHEN and etaHEN detection **does not work and is not claimed to**. VantaFlow reports "Unsupported detection method" whether or not either one is running.
 
-Each item needs a real console on the same network as the computer or phone running VantaFlow.
+## 7. Features that still need physical-console testing
 
-1. **PS4 discovery:** a PS4 that is on appears in the discovery list as PS4 with its correct name.
-2. **PS5 discovery:** same for a PS5.
-3. **Rest mode:** a console in rest mode (with "Stay connected to the internet" on) answers as **Rest mode**, and one with it off does not answer.
-4. **Manual IP:** adding the console's address identifies it. A wrong address (another device, such as a phone or a printer) stays "not identified".
-5. **PS4 firmware below 10.00:** the decoded firmware matches *Settings → System → System Information* (for example 9.00 and 11.00 consoles if available). Record the raw system-version.
-6. **PS4 firmware 10.00 and later:** record the raw system-version and the real firmware to confirm or correct the decoding. Until then it shows as "not confirmed".
-7. **PS5 system-version:** record raw values against the real firmware on several PS5 firmware versions. A mapping may become possible from this data.
-8. **Each model:** confirm that the PS4 Slim / Pro and the PS5 Digital / Slim / Slim Digital / Pro answer DDP the same way, and that no reply field identifies the model.
-9. **Disconnect:** after Disconnect, a network capture shows no packets to the console, including after a restart.
-10. **Networks:** discovery on networks with several interfaces, on Wi-Fi vs Ethernet, and on networks with client isolation (expected: no answer, so the user adds the console by IP).
-11. **Firewall prompts:** whether Windows or macOS asks to allow `node` the first time, and that VantaFlow explains a timeout correctly if the user denies it.
-12. **Android:** build the app with an Android SDK, and on a phone on the same Wi-Fi repeat items 1–5 and 9. Some phones filter broadcast replies while the screen is off.
-13. **GoldHEN / etaHEN running:** confirm that the console still reports **Unsupported detection method** and **Unknown** compatibility, and that nothing claims the environment is installed.
+Step-by-step instructions, expected results and what to record: **[physical-testing.md](physical-testing.md)**. In short:
 
-Mock tests are never proof of real-console detection. Every automated test that uses a fake console says so in its output.
+1. PS4 and PS5 answer the discovery request; identification, name and power state are right.
+2. PS4 firmware below 10.00 matches the console. For 10.00 and later, the raw system-version and the real firmware are recorded to confirm or fix the decoding (until then: "not confirmed").
+3. PS5 raw system-version is recorded against the real firmware (until then: firmware "not available").
+4. Rest mode with and without "Stay Connected to the Internet"; Remote Play on and off.
+5. A wrong address (another device) is never identified.
+6. Disconnect sends nothing (packet capture).
+7. GoldHEN or etaHEN running changes nothing: still "Unsupported detection method".
+8. Android: the same, on a phone on the same Wi-Fi, with the screen recently on and after it was off.
+9. Networks: several interfaces, Wi-Fi vs Ethernet, client isolation.
+
+Mock tests are never proof of real-console detection.

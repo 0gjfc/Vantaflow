@@ -198,6 +198,36 @@ await fakePs5.close();
   ok(mock.every((c) => c.detection.console.source !== 'ddp' && c.detection.connection.transport !== 'ddp-udp'), 'demo data never claims a DDP source');
 }
 
+// ------------------------------------------------------------ physical-test tool (tools/console-check.mjs)
+{
+  const { execFile } = await import('node:child_process');
+  const os = await import('node:os');
+  const t4 = await startFakeConsole((m) => (m.includes('00020020') ? reply('ps4-on-900') : null));
+  const t5 = await startFakeConsole(() => null);
+  const env = { ...process.env, VANTAFLOW_TEST: '1', VANTAFLOW_TEST_PS4_PORT: String(t4.port), VANTAFLOW_TEST_PS5_PORT: String(t5.port) };
+  const out = `${os.tmpdir()}/vantaflow-check-${process.pid}.json`;
+  const tool = (args, input) => new Promise((done) => {
+    const child = execFile(process.execPath, [new URL('../tools/console-check.mjs', import.meta.url).pathname, ...args, '--out', out], { env }, (e, stdout, stderr) => done({ code: e?.code ?? 0, text: stdout + stderr }));
+    if (input !== undefined) child.stdin.end(input);
+  });
+  let r = await tool(['127.0.0.1', '--firmware', '9.00', '--timeout', '600']);
+  const saved = JSON.parse(fs.readFileSync(out, 'utf8'));
+  ok(r.code === 0 && /identified as:\s+PS4/.test(r.text) && /you typed:\s+9\.00 — matches/.test(r.text), 'tool identifies a fake PS4 and compares firmware');
+  ok(/GoldHEN:\s+Unsupported detection method/.test(r.text) && !/GoldHEN (is )?(installed|running|detected)/i.test(r.text), 'tool never claims GoldHEN detection');
+  ok(!JSON.stringify(saved).includes('0123456789AB') && JSON.stringify(saved).includes('host-id:[removed by VantaFlow]'), 'tool report leaves out the console ID');
+  ok(saved.results.find((x) => x.generation === 'ps5').answered === 0, 'tool reports a silent PS5 request as unanswered, not identified');
+  r = await tool(['127.0.0.1', '--hide-name', '--timeout', '600']);
+  ok(!fs.readFileSync(out, 'utf8').includes('Living room PS4'), 'tool --hide-name leaves out the console name');
+  r = await tool(['8.8.8.8']);
+  ok(r.code === 2 && /not a local network address/.test(r.text), 'tool refuses internet addresses');
+  const before = t4.received.length;
+  r = await tool(['--discover', '--timeout', '600'], 'n\n');
+  ok(/Nothing was sent/.test(r.text) && t4.received.length === before, 'tool discovery sends nothing without a yes');
+  fs.rmSync(out, { force: true });
+  await t4.close();
+  await t5.close();
+}
+
 // ------------------------------------------------------------ local agent API
 const agentPs4 = await startFakeConsole(replyMap('ps4-on-900'));
 const PORT = 18000 + Math.floor(Math.random() * 1000);

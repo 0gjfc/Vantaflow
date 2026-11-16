@@ -2,20 +2,58 @@
 
 The Android app is a separate application from the desktop app. They share **data and rules, not code**: the same JSON files in `../shared/` and the same data models, implemented in each app's own language.
 
-## Status (Stage 4)
+## Status (Stage 4.1)
 
 | Part | State |
 |---|---|
-| `core/` — models, compatibility engine, PS4/PS5 rules, mock detection | **Built and tested** (plain Kotlin on the JVM; the same code runs on Android) |
-| `core/` — Stage 4 read-only detection: DDP protocol, separate `Ps4Provider` / `Ps5Provider`, discovery, address rules, saved consoles | **Built and tested** against fake consoles on 127.0.0.1 (`ConnectivityTest`). **Not tested with a physical console.** |
-| `app/` — companion screens (Jetpack Compose) | **Written, not compiled.** The development environment has no Android SDK (its download was not allowed there), so this code has never been built or run. Open `android/` in Android Studio to build it. |
+| `core/` — models, compatibility engine, PS4/PS5 rules, mock detection | **Compiles; tests pass** (plain Kotlin on the JVM; the same code runs on Android) |
+| `core/` — read-only detection: DDP protocol, separate `Ps4Provider` / `Ps5Provider`, discovery, address rules, saved consoles | **Compiles; tests pass** against fake consoles on 127.0.0.1 (`ConnectivityTest`, 13 tests). **Not tested with a physical console.** |
+| `app/` — companion screens (Jetpack Compose) | **Compiles** (`assembleDebug` produces `app-debug.apk`). **Screen tests pass** (`ScreensTest`, 6 Robolectric tests against fake consoles, using the shared JSON as app assets). **Not yet run on a phone or with a physical console.** |
+
+Unsupported detection features are labelled the same way as on the desktop: Model "Not available", PS5 firmware "Not available", GoldHEN / etaHEN "Unsupported detection method". The app never claims GoldHEN or etaHEN detection.
+
+## Build and install
+
+Requirements: JDK 17 or later and the Android SDK (platform 35). Android Studio installs both. Gradle comes with the project (`gradlew`, Gradle 8.14.3). Plugin versions: Android Gradle Plugin 8.7.3, Kotlin 2.0.21. The first build downloads dependencies from Google's Maven repository and Maven Central.
+
+**Android Studio:** *File → Open* → the `android/` folder. Studio writes `local.properties` with the SDK path, which adds the `:app` module. Then *Run ▶* on a phone or emulator.
+
+**Command line:**
 
 ```bash
 cd android
-gradle :core:test      # JDK 17+, internet for Maven Central: 14 tests (SharedVectorsTest, ConnectivityTest)
+export ANDROID_HOME=$HOME/Android/Sdk               # or: echo "sdk.dir=/path/to/sdk" > local.properties
+./gradlew :app:assembleDebug                         # → app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-`:app` is included only when an Android SDK is set up (Android Studio writes `local.properties`; on the command line set `ANDROID_HOME`), so `gradle :core:test` works without one.
+The SDK can also be installed without Android Studio, from the command-line tools (Linux example, which was used to build and test this project):
+
+```bash
+mkdir -p ~/android-sdk/cmdline-tools && cd ~/android-sdk/cmdline-tools
+curl -O https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip commandlinetools-linux-11076708_latest.zip && mv cmdline-tools latest
+yes | latest/bin/sdkmanager --licenses
+latest/bin/sdkmanager "platforms;android-35" "build-tools;34.0.0" "platform-tools"
+export ANDROID_HOME=~/android-sdk
+```
+
+**Tests:**
+
+```bash
+./gradlew :core:test                 # 17 tests, no Android SDK needed
+./gradlew :app:testDebugUnitTest     # 7 screen tests (Robolectric, no emulator); screenshots in app/build/screenshots/
+```
+
+The app needs only the `INTERNET` permission (for any socket). On the phone, use the same Wi-Fi network as the console; guest networks usually block discovery. Physical tests to run: [`../docs/physical-testing.md`](../docs/physical-testing.md) §4.
+
+**Build fixes in Stage 4.1:**
+
+- Plugin versions are declared once in the root `build.gradle.kts`, so the Kotlin plugin is no longer loaded separately by `:core` and `:app`.
+- Repositories are declared in `settings.gradle.kts`.
+- `android.useAndroidX=true` is set in `gradle.properties`.
+- `org.json` is compile-only in `:core`, because Android has it built in; the APK contains no second copy.
+- The screens share one themed root (`VantaFlowApp`), so dialogs use VantaFlow's colours.
 
 ## Modules
 
@@ -34,7 +72,8 @@ android/
     detection/LanConsoles.kt    Saved consoles: add, connect, disconnect, remove
   app/                          Jetpack Compose companion (depends on :core, bundles ../shared as assets)
     ConsolesModel.kt            State and actions; network work on Dispatchers.IO through :core
-    MainActivity.kt             Screens and dialogs
+    MainActivity.kt             Theme (VantaFlowApp), screens and dialogs
+    src/test/…/ScreensTest.kt   Robolectric screen tests with fake consoles
 ```
 
 ## Companion screens (`app`, Stage 4)

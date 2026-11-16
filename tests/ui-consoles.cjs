@@ -21,8 +21,10 @@ const reply = (id, name) => samples.find((s) => s.id === id).reply.replace(/host
 let server;
 (async () => {
   const { startFakeConsole } = await import('./fake-console.mjs');
-  const ps4 = await startFakeConsole((m) => (m.includes('00020020') ? reply('ps4-on-900', 'Test PS4') : null));
-  const ps5 = await startFakeConsole((m) => (m.includes('00030010') ? reply('ps5-on', 'Test PS5') : null));
+  let mode = 'answer'; // 'answer' | 'silent' | 'garbage' (failed-discovery checks)
+  const fakeReply = (text) => (mode === 'silent' ? null : mode === 'garbage' ? 'HTTP/1.1 200 Ok\nhost-type:PS4\n' : text);
+  const ps4 = await startFakeConsole((m) => (m.includes('00020020') ? fakeReply(reply('ps4-on-900', 'Test PS4')) : null));
+  const ps5 = await startFakeConsole((m) => (m.includes('00030010') ? fakeReply(reply('ps5-on', 'Test PS5')) : null));
   server = spawn(process.execPath, ['desktop/server.mjs'], {
     cwd: ROOT,
     env: { ...process.env, VANTAFLOW_PORT: String(PORT), VANTAFLOW_TEST: '1', VANTAFLOW_TEST_PS4_PORT: String(ps4.port), VANTAFLOW_TEST_PS5_PORT: String(ps5.port), VANTAFLOW_TEST_TIMEOUT_MS: '400', VANTAFLOW_TEST_DISCOVERY_TARGET: '127.0.0.1' },
@@ -186,6 +188,30 @@ let server;
     await wait(p, 600);
     assert.doesNotMatch(await p.textContent('.panel-list'), /127\.0\.0\.2/);
     assert.match(await p.textContent('.panel-list'), /No consoles saved yet/);
+  });
+
+  await check('failed discovery never creates a console: silence or incomplete replies', async () => {
+    for (const m of ['silent', 'garbage']) {
+      mode = m;
+      await select('.row:has-text("Discover consoles")');
+      await keys(p, 'Enter', 'Enter');
+      await wait(p, 1500);
+      assert.match(await toasts(), /No consoles answered/, m);
+      assert.equal(await p.$('#dialog .choice'), null, `${m}: nothing offered`);
+      assert.match(await p.textContent('.panel-list'), /No consoles saved yet/, `${m}: nothing saved`);
+      assert.equal(await p.evaluate(() => localStorage.getItem('vantaflow.lan-consoles')), '[]');
+    }
+    mode = 'answer';
+  });
+
+  await check('demo and real consoles never share labels', async () => {
+    await select('.row:has-text("Living room PS4 Pro")');
+    assert.match(await detail(), /SIMULATED/);
+    assert.match(await detail(), /no console was contacted/);
+    assert.doesNotMatch(await detail(), /READ-ONLY/);
+    const groups = await p.$$eval('.panel-list .row.group', (els) => els.map((e) => e.textContent));
+    assert.equal(groups[0], 'Your consoles');
+    assert.ok(groups.slice(1).every((g) => g.startsWith('Demo')), groups.join());
   });
 
   await check('saved consoles survive a restart and are re-checked only when connected', async () => {

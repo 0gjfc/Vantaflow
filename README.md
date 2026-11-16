@@ -1,12 +1,20 @@
-# VantaFlow — Stage 4: real console connectivity (read-only)
+# VantaFlow — Stage 4.1: real console connectivity (read-only), validation pass
 
 VantaFlow is an Itemzflow-inspired PlayStation dashboard. Itemzflow's horizontal coverflow is the centrepiece, and a subtle top navigation bar adds the other PlayStation sections.
 
-**Stage 4 status:** VantaFlow can find and identify the user's own PS4 and PS5 on the local network, read-only, through the PlayStation Device Discovery Protocol (DDP), with separate PS4 and PS5 providers on the desktop and in the Android companion core. It verifies the console type, name and power state, and on a PS4 the firmware (confirmed below 10.00). It cannot read the model, the PS5 firmware number or GoldHEN / etaHEN status: no documented read-only method exists, so these are shown as **not available** and **Unsupported detection method**, and a real console is rated **Unknown**, never Compatible. All of this is tested against fake consoles, **not yet on physical hardware** (see the list in [docs/connectivity.md](docs/connectivity.md#6-features-that-still-need-physical-console-testing)). The Android companion screens are written but **not compiled** (no Android SDK in the development environment). The demonstration consoles stay, clearly labelled.
+**Stage 4 status:** VantaFlow can find and identify the user's own PS4 and PS5 on the local network, read-only, through the PlayStation Device Discovery Protocol (DDP), with separate PS4 and PS5 providers on the desktop and in the Android companion core. It verifies the console type, name and power state, and on a PS4 the firmware (confirmed below 10.00). It cannot read the model, the PS5 firmware number or GoldHEN / etaHEN status: no documented read-only method exists, so these are shown as **not available** and **Unsupported detection method**, and a real console is rated **Unknown**, never Compatible. All of this is tested against fake consoles, **not yet on physical hardware**. Instructions for your PS4 and PS5 are in [docs/physical-testing.md](docs/physical-testing.md), with a read-only check tool, `tools/console-check.mjs`. The Android companion **compiles** and its screens pass tests against fake consoles (see [android/README.md](android/README.md#build-and-install)). The demonstration consoles stay, clearly labelled.
+
+**Stage 4.1 (validation):**
+
+- Android builds.
+- A reliability fix: a probe now accepts replies only from the probed address.
+- Tests show that failed discovery never creates a console and that demo and real consoles never mix.
+- A physical-test kit is included.
+- [Which tests used fake consoles and which used physical ones](docs/connectivity.md#5-test-evidence-physical-vs-fake-consoles). So far: none physical.
 
 **Stage 3 (unchanged):** PS4 and PS5 are separate platform modules with their own models, homebrew environment (GoldHEN / etaHEN), customization capabilities and compatibility rules. A compatibility engine rates a console from researched, dated release data, a detection architecture runs with a mock provider, a **Consoles** page (opened from the console status in the top bar) manages consoles, PS4 and PS5 profiles keep separate console settings while the VantaFlow account is shared by default, and an Android companion core shares the same data and rules. Everything that would need a console is still **demonstration data**, clearly labelled. Nothing talks to a console, installs packages, runs payloads or touches system files.
 
-Documents: [**connectivity (Stage 4)**](docs/connectivity.md) · [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
+Documents: [**connectivity (Stage 4)**](docs/connectivity.md) · [**physical testing (Stage 4.1)**](docs/physical-testing.md) · [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
 
 ---
 
@@ -32,22 +40,29 @@ node tests/logic.test.mjs                              # settings validation, PS
 node tests/compat.test.mjs                             # compatibility engine, researched data, detection (Node 18+)
 node tests/profiles.test.mjs                           # console profiles and the shared account (Node 18+)
 
-node tests/connectivity.test.mjs                       # Stage 4: DDP, providers, discovery, agent API (fake consoles)
+node tests/connectivity.test.mjs                       # Stage 4: DDP, providers, discovery, agent API, reliability (fake consoles)
+node tools/console-check.mjs 192.168.1.20              # Stage 4.1: read-only check of YOUR console (see docs/physical-testing.md)
 
 node desktop/server.mjs &                              # end-to-end in a real browser (needs Playwright installed)
 node tests/ui-smoke.cjs http://127.0.0.1:8080/
 node tests/ui-consoles.cjs                             # Stage 4 Consoles page with fake consoles (starts its own agent)
 
-cd android && gradle :core:test                        # Android core: same vectors, Kotlin engine (JDK 17+)
+cd android && ./gradlew :core:test                     # Android core: same vectors, Kotlin engine, connectivity (JDK 17+)
+cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug   # Android screens + APK (needs the Android SDK)
 node tools/build-docs.mjs                              # regenerate docs/compatibility.md and docs/customization.md
 ```
 
 - `tests/compat.test.mjs` (494 checks): integrity of the researched data, every mock console gets its expected status with reasons, targeted rules (e.g. etaHEN 2.4B on 8.20 is Unknown because 2.4B does not restate 8.20), the strict etaHEN rule for every release × firmware, the detection service (timeouts and errors become Not detected), design tokens vs CSS, and **20 000 random configurations** proving that nothing unverified or undocumented is ever rated Compatible.
 - `tests/profiles.test.mjs`: shared account by default, separate PS4/PS5 accounts when turned on, console settings always separate, restart, upgrade from Stage 3.
 - `tests/ui-smoke.cjs` (22 checks): every section, the 11-icon top bar with Consoles opened from the console status, carousel, selection and simulated launch, accent colour, animation speed, background preview → apply, profile editing, notifications, File Manager, storage, a simulated gamepad, the Consoles page (all 11 consoles and their statuses, detect again, unknown device refused), switching to a PS5 console (etaHEN, PS5 library, shared account, separate console settings), turning on separate PS4/PS5 profiles, preferences after a restart per profile, logo text fallback, window sizes. Playwright is only for this test.
-- `tests/connectivity.test.mjs` (105 checks): every shared DDP sample, address validation, PS4 and PS5 providers against fake consoles (identification, unconfirmed 11.00, missing firmware, wrong type, unknown type, non-DDP reply, timeout, network error), discovery (one request per generation, loopback filtering), the agent API (header, Host check, consent, invalid address, probe) and engine integration (a real PS4 / PS5 is Unknown, never Compatible).
-- `tests/ui-consoles.cjs` (14 checks): no traffic before consent, the consent text, discovery results, real-console detail (verified vs not available, HEN status never guessed), making a real console active (top bar, GoldHEN page), disconnect (no traffic), connect and refresh, invalid and internet addresses refused, an address that does not answer stays "not identified", remove, restart re-check, and behaviour without the agent.
-- `android/core` (14 tests): the Kotlin engine gives the same status as the desktop for every mock console; the account model is shared unless separate accounts are on; Stage 4 `ConnectivityTest` repeats the DDP samples, address rules, PS4/PS5 providers, timeouts, network errors, discovery, saved consoles (connect, disconnect without traffic, remove) and engine integration.
+- `tests/connectivity.test.mjs` (117 checks): every shared DDP sample, address validation, PS4 and PS5 providers against fake consoles (identification, unconfirmed 11.00, missing firmware, wrong type, unknown type, non-DDP reply, timeout, network error), discovery (one request per generation, loopback filtering), the agent API (header, Host check, consent, invalid address, probe) and engine integration (a real PS4 / PS5 is Unknown, never Compatible). Stage 4.1 adds:
+  - replies from another address are ignored;
+  - 10 000 mutated replies produce no false identification;
+  - demo data never claims a DDP source;
+  - the physical-test tool is covered.
+- `tests/ui-consoles.cjs` (16 checks): no traffic before consent, the consent text, discovery results, real-console detail (verified vs not available, HEN status never guessed), making a real console active (top bar, GoldHEN page), disconnect (no traffic), connect and refresh, invalid and internet addresses refused, an address that does not answer stays "not identified", remove, restart re-check, behaviour without the agent, and (Stage 4.1) failed discovery saving nothing and demo / real labels never mixing.
+- `android/app` (7 tests, Robolectric): the real Compose screens with the shared JSON and fake consoles. They cover demo consoles and their expected statuses, add by IP, invalid addresses, a silent address that stays not identified, disconnect without traffic, and discovery that asks first. One more test renders screenshots.
+- `android/core` (17 tests): the Kotlin engine gives the same status as the desktop for every mock console; the account model is shared unless separate accounts are on; Stage 4 `ConnectivityTest` repeats the DDP samples, address rules, PS4/PS5 providers, timeouts, network errors, discovery, saved consoles (connect, disconnect without traffic, remove) and engine integration.
 
 **Fake consoles are not physical proof.** Every test that uses one says so in its output.
 
@@ -180,9 +195,10 @@ shared/                    Language-neutral data used by desktop and Android
   customization.json       Customization research
   design-tokens.json       Colours and timing shared with Android
   ddp-samples.json         DDP reply samples (constructed from the documented format) — shared test vectors
-android/                   Android companion: core module (Kotlin, tested) + Compose app (written, not compiled)
+android/                   Android companion: core module (Kotlin) + Compose app; both compile and are tested
 docs/                      Compatibility, customization, detection, data models, safety
 tools/build-docs.mjs       Generates docs/compatibility.md and docs/customization.md
+tools/console-check.mjs    Read-only check of your own PS4 / PS5 (physical testing)
 assets/goldhen/            Official GoldHEN logo
 assets/etahen/             Official etaHEN logo
 tests/                     logic, compat, profiles, connectivity (Node); ui-smoke.cjs, ui-consoles.cjs (Playwright, optional); fake-console.mjs
@@ -251,8 +267,8 @@ No jailbreak exploits, firmware exploitation, payload execution, authentication 
 | **Researched (primary sources, verified 2026-11-16)** | GoldHEN: per-release firmware from payload files in tagged commits (v1.0–v2.3) and release-note firmware lists (v2.4b17–v2.4b18), features and dates from the changelog and README. etaHEN: per-release firmware statements, requirements and known issues from release notes, features and config from the README, dates from git tags. |
 | **Researched (secondary sources)** | PS5 official home-screen customization (retro looks, animated themes, no custom wallpaper); PS5 disc-drive model groups. Marked as secondary in [docs/customization.md](docs/customization.md). |
 | **Implemented and tested with fake consoles (Stage 4)** | DDP parsing, PS4 / PS5 identification, PS4 firmware decoding, discovery, manual IP, connect / disconnect / refresh / remove / make active, errors and timeouts, engine integration — desktop and Android core. |
-| **Implemented, not tested on physical hardware** | Everything that talks to a real console. Physical-test list: [docs/connectivity.md](docs/connectivity.md#6-features-that-still-need-physical-console-testing). |
-| **Implemented, not compiled** | Android companion screens (`android/app`). |
+| **Implemented, not tested on physical hardware** | Everything that talks to a real console, on desktop and Android. Instructions: [docs/physical-testing.md](docs/physical-testing.md). |
+| **Android companion** | Compiles (APK); screens tested with Robolectric and fake consoles; not yet run on a phone. |
 | **Unsupported (no documented read-only method)** | Console model, PS5 firmware number, GoldHEN / etaHEN status and version, storage. |
 | **Simulated** | The demonstration consoles and their detection results; GoldHEN / etaHEN plugins and tools; launching, power and other console actions. |
 | **Unverified / unknown** | GoldHEN betas 2.4b5–2.4b16.2 (not published as releases); etaHEN releases without firmware statements (never rated compatible); release asset file names; PS4 profile customization; PS4 system-version layout from 10.00; PS5 system-version mapping. |
@@ -262,6 +278,6 @@ No jailbreak exploits, firmware exploitation, payload execution, authentication 
 - On a real console, text entry (username) would use the system keyboard; the browser shows a text field.
 - The gamepad was tested with a simulated standard-mapping pad; real pads depend on the browser exposing them.
 - Background music is a generated tone loop; reading MP3s from USB needs console access.
-- The Android companion screens are written but have never been compiled or run: the development environment has no Android SDK. `android/core`, which holds their logic, is compiled and tested.
-- Real-console detection has not been run against a physical PS4 or PS5.
+- The Android companion compiles and its screens are tested on the JVM (Robolectric), but it has not been run on a phone.
+- Real-console detection has not been run against a physical PS4 or PS5. The cloud development environment cannot reach your network; [docs/physical-testing.md](docs/physical-testing.md) is for you to run.
 - Discovery uses broadcast; networks with client isolation (often guest Wi-Fi) block it. Add the console by IP address there.
