@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VantaFlow — Stage 1 prototype</title>
+  <title>VantaFlow</title>
   <link rel="stylesheet" href="css/vantaflow.css">
   <script type="module" src="js/main.js"></script>
 </head>
@@ -14,11 +14,11 @@
     <div id="bg-dim"></div>
 
     <header id="topbar">
-      <div class="profile"></div>
+      <button id="profile" class="nav-btn profile" data-id="profile"></button>
       <nav id="nav" aria-label="Sections"></nav>
       <div class="status">
-        <button id="gh-badge" class="nav-btn gh-badge" data-id="goldhen"></button>
-        <span id="console-status"></span>
+        <button id="gh-badge" class="nav-btn gh-badge"></button>
+        <button id="console-status" title="Console settings"></button>
         <span id="clock"></span>
       </div>
     </header>

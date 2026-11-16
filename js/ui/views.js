@@ -3,8 +3,9 @@
 //   PanelView – list on the left, detail on the right (everything else)
 import { Coverflow } from './carousel.js';
 import { coverArt } from './art.js';
-import { storage, formatPlayed } from './data.js';
-import { toggleFavorite } from './settings.js';
+import { formatPlayed } from '../data/library.js';
+import { storageInfo } from '../platform/index.js';
+import { settings, toggleFavorite } from '../core/settings.js';
 import { esc, icon, btn, tag, blip, toast, simulated, confirmDialog, showSplash } from './ui.js';
 
 // Game-page options, as in Itemzflow's ITEM_PAGE (trimmed to what makes sense in Stage 1).
@@ -49,7 +50,7 @@ export class FlowView {
     this.root = root;
     this.app = app;
     this.lastId = {};
-    root.innerHTML = '<div class="flow-caption"></div><div class="cf-stage"></div><div class="flow-info"></div><div class="storage"></div><div class="page-panel"></div>';
+    root.innerHTML = '<div class="flow-caption"></div><div class="cf-stage"></div><div class="flow-info"></div><button class="storage" title="Storage details"></button><div class="page-panel"></div>';
     this.cf = new Coverflow(root.querySelector('.cf-stage'), {
       config: app.flowConfig,
       onChange: () => this.renderInfo(),
@@ -62,15 +63,20 @@ export class FlowView {
       if (Number(r.dataset.opt) === this.page.sel) this.handle('cross');
       else { this.page.sel = Number(r.dataset.opt); this.renderPage(); }
     });
-    root.querySelector('.storage').innerHTML = storage.map((s) => `<div><b>${esc(s.name)}</b> <span class="mock">MOCK</span>
-      <div class="bar"><i style="width:${(s.used / s.total) * 100}%"></i></div>${(s.total - s.used).toFixed(1)} GB free of ${s.total} GB</div>`).join('');
+    root.querySelector('.storage').addEventListener('click', () => app.openSettingsAt((r) => r.id === 'storage'));
+  }
+
+  renderStorage() {
+    this.root.querySelector('.storage').innerHTML = storageInfo().map((d) => `<div><b>${esc(d.name)}</b> <span class="mock">MOCK</span>
+      <div class="bar"><i style="width:${(d.used / d.total) * 100}%"></i></div>${d.free.toFixed(1)} GB free of ${d.total} GB</div>`).join('');
   }
 
   show(section) {
     if (this.page) this.closePage(true);
     this.section = section;
     const items = section.items();
-    this.root.querySelector('.flow-caption').innerHTML = `<b>${esc(section.label)}</b> · ${items.length} ${esc(section.noun)} · mock data`;
+    this.root.querySelector('.flow-caption').innerHTML = `<b>${esc(section.label)}</b> · ${items.length} ${esc(section.noun)} · demo data`;
+    this.renderStorage();
     this.cf.setItems(items, section.shape, this.lastId[section.id]);
   }
 
@@ -80,7 +86,7 @@ export class FlowView {
     if (!it) { info.innerHTML = '<h2>Nothing installed</h2>'; return; }
     this.lastId[this.section.id] = it.id;
     info.innerHTML = `<h2>${it.fav ? '<span class="heart">♥</span> ' : ''}${esc(it.title)}</h2>
-      <div class="meta"><span class="tid">${esc(it.id)} · </span>${esc(it.type)} (${esc(it.version)})</div>
+      <div class="meta"><span class="tid">${esc(it.id)} · </span>${esc(it.type)} (${esc(it.version)})${it.platform === 'ps4' && settings.console === 'ps5' ? ' · PS4 title' : ''}</div>
       <div class="desc">${esc(it.desc)}</div>
       <button class="select">${btn('cross')}<span>Select</span></button>`;
     this.app.updatePrompts();
@@ -142,7 +148,7 @@ export class FlowView {
         return true;
       case 'cross': this.openPage(); return true;
       case 'square': if (this.cf.current) favorite(this.cf.current, this); this.renderInfo(); return true;
-      case 'triangle': toast('Simulated', `Rescanned ${this.section.label.toLowerCase()} — mock list unchanged.`, 'sim'); return true;
+      case 'triangle': this.app.reloadLibrary(); return true;
       case 'down': return true;
       default: return false; // up / circle → navigation bar
     }
@@ -160,6 +166,7 @@ export class PanelView {
     this.app = app;
     this.sel = {};
     root.addEventListener('click', (e) => {
+      if (e.target.closest('.cta')) { this.handle('cross'); return; }
       const r = e.target.closest('[data-idx]');
       if (!r) return;
       if (Number(r.dataset.idx) === this.index) this.handle('cross');
@@ -210,6 +217,7 @@ export class PanelView {
       this.render();
       return true;
     }
+    if (action === 'cross' && it?.noAction) return true; // information-only row
     if (action === 'cross' && it && s.activate) {
       blip('select');
       Promise.resolve(s.activate(it, this)).then(() => this.render());
@@ -220,10 +228,20 @@ export class PanelView {
       this.render();
       return true;
     }
+    if (s.on?.[action]) { // extra buttons, e.g. □ "Mark all read"
+      blip('select');
+      s.on[action](it, this);
+      this.render();
+      return true;
+    }
     return false;
   }
 
   prompts() {
-    return this.section.prompts?.(this.current) ?? [['cross', 'Select'], ['circle', 'Back'], ['updown', 'Navigate'], ['l1r1', 'Sections']];
+    const it = this.current;
+    return this.section.prompts?.(it) ?? [
+      ...(it?.noAction ? [] : [['cross', 'Select']]),
+      ['circle', 'Back'], ['updown', 'Navigate'], ['l1r1', 'Sections'],
+    ];
   }
 }

@@ -1,5 +1,6 @@
-// Shared UI helpers: escaping, icons, controller glyphs, tags, toasts, sounds, dialogs, splash.
-import { settings } from './settings.js';
+// Shared UI components: escaping, icons, controller glyphs, tags, small widgets, toasts,
+// sounds and music, dialogs, splash screens.
+import { settings } from '../core/settings.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -61,6 +62,12 @@ export const tag = (kind) => kind === 'live'
   ? '<span class="tag live" title="Works for real in this prototype">LIVE</span>'
   : '<span class="tag sim" title="Mock data / simulated action">SIMULATED</span>';
 
+// Small widgets used by several sections.
+export const bar = (p) => `<span class="progress"><i style="width:${p}%"></i></span>`;
+export const kv = (pairs) => `<dl class="kv">${pairs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`;
+// Call-to-action inside a detail pane. Clicking it does the same as pressing ✕ on the row.
+export const cta = (label, sim = true) => `<button class="cta">${btn('cross')}<span>${esc(label)}</span>${sim ? '<span class="mini-sim">SIM</span>' : ''}</button>`;
+
 // ---------------------------------------------------------------- toasts ---
 const TOAST_ICON = { info: 'info', sim: 'sim', success: 'check', warn: 'warn' };
 export function toast(title, msg = '', kind = 'info') {
@@ -76,6 +83,9 @@ export const simulated = (what) => toast('Simulated', `${what} — no console is
 
 // ---------------------------------------------------------------- sounds ---
 let audio;
+// Browsers only start audio after user input; call this from the input handler.
+export const wakeAudio = () => { if (audio?.state === 'suspended') audio.resume(); };
+
 export function blip(kind = 'move') {
   if (!settings.uiSounds || !settings.volume) return;
   try {
@@ -90,6 +100,38 @@ export function blip(kind = 'move') {
     o.connect(g).connect(audio.destination);
     o.start(t);
     o.stop(t + 0.1);
+  } catch { /* audio unavailable */ }
+}
+
+// Background music: a soft generated ambient chord (no audio files needed).
+let music = null;
+export function setMusic(on, volume) {
+  try {
+    if (!on || !volume) { music?.stop(); music = null; return; }
+    audio ??= new AudioContext();
+    if (!music) {
+      const out = audio.createGain();
+      out.gain.value = 0;
+      out.connect(audio.destination);
+      const voices = [110, 164.81, 220, 277.18].map((hz, i) => {
+        const o = audio.createOscillator();
+        const g = audio.createGain();
+        o.frequency.value = hz;
+        o.detune.value = (i - 1.5) * 5;
+        g.gain.value = 0.25;
+        o.connect(g).connect(out);
+        o.start();
+        return o;
+      });
+      const lfo = audio.createOscillator(); // slow swell
+      const depth = audio.createGain();
+      lfo.frequency.value = 0.07;
+      depth.gain.value = 0.4;
+      lfo.connect(depth).connect(voices[3].frequency);
+      lfo.start();
+      music = { out, stop: () => { [...voices, lfo].forEach((o) => o.stop()); out.disconnect(); } };
+    }
+    music.out.gain.setTargetAtTime((volume / 100) * 0.05, audio.currentTime, 0.6);
   } catch { /* audio unavailable */ }
 }
 
@@ -108,6 +150,31 @@ export function confirmDialog({ title, message, confirm = 'Confirm', cancel = 'C
     el.onclick = (e) => { const b = e.target.closest('button'); if (b) close(b.dataset.i === '1'); };
     render();
     el.hidden = false;
+  });
+}
+
+// Text entry (e.g. username). Resolves to the new text, or null when cancelled.
+// On a console the system keyboard would open here; in the browser it is a text field.
+export function textDialog({ title, value = '', maxLength = 16, hint = '' }) {
+  return new Promise((resolve) => {
+    const el = document.getElementById('dialog');
+    el.innerHTML = `<div class="dialog-box"><h2>${esc(title)}</h2>${hint ? `<p>${esc(hint)}</p>` : ''}
+      <input class="dialog-input" maxlength="${maxLength}" value="${esc(value)}" spellcheck="false">
+      <div class="dialog-btns"><button data-i="0">Cancel</button><button data-i="1" class="sel">Save</button></div></div>`;
+    const input = el.querySelector('input');
+    dialog = {
+      el, sel: 1,
+      resolve: (ok) => resolve(ok ? input.value.trim() : null),
+      render: () => el.querySelectorAll('.dialog-btns button').forEach((b) => b.classList.toggle('sel', Number(b.dataset.i) === dialog.sel)),
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); close(true); }
+      if (e.key === 'Escape') { e.preventDefault(); close(false); }
+    });
+    el.onclick = (e) => { const b = e.target.closest('button'); if (b) close(b.dataset.i === '1'); };
+    el.hidden = false;
+    input.focus();
+    input.select();
   });
 }
 

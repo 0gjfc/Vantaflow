@@ -131,6 +131,6 @@ export function iconArt(item) {
 // Markup for one cover. Procedural case art gets a CSS "PS4" case band; real box art already has one.
 export function coverHTML(item, shape) {
   if (shape === 'square') return `<div class="cover square"><img src="${iconArt(item)}" alt="" draggable="false"></div>`;
-  const band = item.cover ? '' : '<div class="band"><span>PS4</span></div>';
+  const band = item.cover ? '' : item.platform === 'ps5' ? '<div class="band ps5"><span>PS5</span></div>' : '<div class="band"><span>PS4</span></div>';
   return `<div class="cover case">${band}<img src="${coverArt(item)}" alt="" draggable="false"></div>`;
 }

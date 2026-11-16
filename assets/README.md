@@ -16,9 +16,11 @@ Real box art is shown as-is. The blue "PS4" band is only drawn on generated plac
 
 For an application or homebrew icon, use a square image (512 × 512) and an `iconImage` field instead.
 
-## etaHEN logo — `assets/etahen/etahen-logo.jpg`
+## etaHEN logo — `assets/etahen/etahen-logo.png`
 
-The official etaHEN icon (PS5), used unaltered in the HEN panel and the top-bar badge when Settings → Console is PS5.
+The official etaHEN icon (PS5), used unaltered (converted from JPEG to PNG, same pixels) in the etaHEN section and the top-bar badge when Settings → Console is PS5.
+
+If either logo file is missing, VantaFlow shows the plain name instead.
 
 ## GoldHEN logo — `assets/goldhen/goldhen-logo.png`
 

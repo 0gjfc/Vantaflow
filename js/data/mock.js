@@ -1,12 +1,8 @@
-// Mock data for the Stage 1 prototype. Nothing here talks to a console.
+// Demonstration data. Nothing here talks to a console.
+// Titles are read through data/library.js, so a real source can replace this file later.
 // To use real cover art, add `cover: 'assets/covers/CUSA00000.png'` to a game entry.
 
-export const profile = { name: 'Player One', level: 214, colors: ['#1d86f0', '#0b3f8c'] };
-
-export const storage = [
-  { name: 'Internal', total: 825, used: 612.4 },
-  { name: 'USB0', total: 1863, used: 845.1 },
-];
+export const profile = { level: 214 }; // username, avatar colour and online status are user settings
 
 export const games = [
   { id: 'CUSA31027', title: 'Ashen Frontier', version: '01.08', type: 'Retail', genre: 'Action RPG', publisher: 'Northwind Studios', released: '2023', size: '48.2 GB', played: 4260, lastPlayed: '2026-11-14', trophies: [31, 52],
@@ -33,7 +29,18 @@ export const games = [
     desc: 'Squad-based warfare on a storm-battered coastline.', art: { motif: 'waves', colors: ['#070b0e', '#28343c', '#7d8c94', '#eef2f4'], font: 'wide', tagline: 'Hold the line' } },
   { id: 'CUSA18820', title: 'Moonlit Garden', version: '01.00', type: 'Retail', genre: 'Puzzle', publisher: 'Little Lantern', released: '2020', size: '4.2 GB', played: 510, lastPlayed: '2026-06-11', trophies: [24, 24],
     desc: 'A calm puzzle journey through a garden that blooms at night.', art: { motif: 'moon', colors: ['#060a18', '#1b2a5a', '#7f9ad8', '#fdf6e3'], font: 'serif', tagline: 'Bloom after dark' } },
-].map((g) => ({ ...g, kind: 'game' }));
+].map((g) => ({ ...g, kind: 'game', platform: 'ps4' })).concat([
+  { id: 'PPSA04218', title: 'Aether Drift', version: '01.004.000', type: 'Retail', genre: 'Anti-grav Racing', publisher: 'Halcyon Forge', released: '2025', size: '68.4 GB', played: 1240, lastPlayed: '2026-11-16', trophies: [19, 45],
+    desc: 'Anti-gravity racing through floating megacities.', art: { motif: 'road', colors: ['#04060f', '#16245a', '#4f7dff', '#eef3ff'], font: 'wide', tagline: 'Break the sky' } },
+  { id: 'PPSA08861', title: 'Lumen Requiem', version: '01.002.000', type: 'Retail', genre: 'Action Adventure', publisher: 'Brightvale', released: '2025', size: '92.1 GB', played: 2870, lastPlayed: '2026-11-11', trophies: [33, 51],
+    desc: 'A knight of light hunts the last shadow of a dying world.', art: { motif: 'sun', colors: ['#0d0a05', '#5a3d0e', '#e8b44a', '#fff6dc'], font: 'serif', tagline: 'Carry the flame' } },
+  { id: 'PPSA02397', title: 'Ironvale Siege', version: '01.010.000', type: 'Retail', genre: 'Strategy', publisher: 'Keepstone', released: '2024', size: '54.7 GB', played: 3400, lastPlayed: '2026-10-29', trophies: [27, 40],
+    desc: 'Build, defend and break the walls of a mountain realm.', art: { motif: 'ruins', colors: ['#0a0a0c', '#33302a', '#a89878', '#f2ebdc'], font: 'serif', tagline: 'Hold the gate' } },
+  { id: 'PPSA11502', title: 'Nova Tempest', version: '01.001.000', type: 'Retail', genre: 'Sci-fi Shooter', publisher: 'Parallax Works', released: '2026', size: '101.3 GB', played: 520, lastPlayed: '2026-11-15', trophies: [8, 50],
+    desc: 'Squad shooter on a storm planet that rewrites itself.', art: { motif: 'planet', colors: ['#02040a', '#0d2a3f', '#2fb6d6', '#e6fbff'], font: 'wide', tagline: 'Ride the storm' } },
+  { id: 'PPSA06644', title: 'Silent Orchard', version: '01.000.000', type: 'Retail', genre: 'Narrative', publisher: 'Little Lantern', released: '2025', size: '12.9 GB', played: 610, lastPlayed: '2026-09-14', trophies: [15, 15],
+    desc: 'A quiet story about a family orchard and the year it went still.', art: { motif: 'forest', colors: ['#070b06', '#24361c', '#9cbf6b', '#f7f9ec'], font: 'serif', tagline: 'Listen to the leaves' } },
+].map((g) => ({ ...g, kind: 'game', platform: 'ps5' })));
 
 export const apps = [
   { id: 'NPXS20001', title: 'Media Player', icon: 'media', colors: ['#0f3b78', '#1d86f0'], desc: 'Play music and video from USB or a media server.' },
@@ -79,12 +86,12 @@ export const friends = [
 ];
 
 export const notifications = [
-  { title: 'Trophy unlocked', msg: 'Ashen Frontier — "Master of Arms" (Gold)', time: '12 min ago', icon: 'trophy', read: false },
-  { title: 'Friend request', msg: 'drift_king_404 sent you a friend request.', time: '1 h ago', icon: 'friends', read: false },
-  { title: 'Download complete', msg: 'Velocity Circuit GT update 02.01 is ready.', time: '3 h ago', icon: 'download', read: false },
-  { title: 'Homebrew enabler', msg: 'Plugins loaded: 3 (mock status).', time: 'Today', icon: 'flask', read: true },
-  { title: 'Storage', msg: 'Internal storage is 74% full.', time: 'Yesterday', icon: 'folder', read: true },
-  { title: 'Party invite', msg: 'NightCrow_88 invited you to a party.', time: 'Yesterday', icon: 'friends', read: true },
+  { id: 'n1', title: 'Trophy unlocked', msg: 'Ashen Frontier — "Master of Arms" (Gold)', time: '12 min ago', icon: 'trophy', read: false },
+  { id: 'n2', title: 'Friend request', msg: 'drift_king_404 sent you a friend request.', time: '1 h ago', icon: 'friends', read: false },
+  { id: 'n3', title: 'Download complete', msg: 'Velocity Circuit GT update 02.01 is ready.', time: '3 h ago', icon: 'download', read: false },
+  { id: 'n4', title: 'Homebrew enabler', msg: 'Plugins loaded: 3 (mock status).', time: 'Today', icon: 'flask', read: true },
+  { id: 'n5', title: 'Storage', msg: 'Internal storage is 74% full.', time: 'Yesterday', icon: 'folder', read: true },
+  { id: 'n6', title: 'Party invite', msg: 'NightCrow_88 invited you to a party.', time: 'Yesterday', icon: 'friends', read: true },
 ];
 
 export const media = [
@@ -102,31 +109,30 @@ export const media = [
 ];
 
 const f = (name, size, modified = '2026-10-12') => ({ name, size, modified });
-export const fileTree = {
-  name: '', children: [
-    { name: 'data', children: [
-      { name: 'GoldHEN', children: [
-        { name: 'plugins', children: [f('game_patch.prx', '84 KB'), f('fliprate_remover.prx', '22 KB'), f('no_share_watermark.prx', '18 KB')] },
-        { name: 'patches', children: [{ name: 'xml', children: [f('CUSA31027.xml', '6 KB'), f('CUSA24510.xml', '4 KB')] }] },
-        { name: 'cheats', children: [{ name: 'json', children: [f('CUSA17702_01.04.json', '3 KB')] }] },
-        f('goldhen.ini', '1 KB'),
+
+// Mock file system for the active platform: the HEN folder and installed titles differ per console.
+export function buildFileTree(hen, installed) {
+  return {
+    name: '', children: [
+      { name: 'data', children: [
+        { name: hen.dir, children: [{ name: 'plugins', children: hen.plugins.map((p) => f(p.file, '48 KB')) }, ...hen.files] },
+        { name: 'vantaflow', children: [f('settings.ini', '2 KB', '2026-11-16'), f('vantaflow.log', '148 KB', '2026-11-16')] },
       ] },
-      { name: 'vantaflow', children: [f('settings.ini', '2 KB', '2026-11-16'), f('vantaflow.log', '148 KB', '2026-11-16')] },
-    ] },
-    { name: 'mnt', children: [
-      { name: 'usb0', children: [
-        { name: 'music', children: [f('Ember Overture.mp3', '8.4 MB'), f('Harbor Lights.mp3', '9.1 MB')] },
-        { name: 'backgrounds', children: [f('wallpaper_01.png', '2.2 MB'), f('wallpaper_02.jpg', '1.4 MB')] },
-        f('readme.txt', '1 KB'),
+      { name: 'mnt', children: [
+        { name: 'usb0', children: [
+          { name: 'music', children: [f('Ember Overture.mp3', '8.4 MB'), f('Harbor Lights.mp3', '9.1 MB')] },
+          { name: 'backgrounds', children: [f('wallpaper_01.png', '2.2 MB'), f('wallpaper_02.jpg', '1.4 MB')] },
+          f('readme.txt', '1 KB'),
+        ] },
       ] },
-    ] },
-    { name: 'user', children: [
-      { name: 'app', children: games.slice(0, 6).map((g) => ({ name: g.id, children: [f('app.json', '1 KB')] })) },
-      { name: 'home', children: [{ name: '1a2b3c4d', children: [f('profile.dat', '12 KB')] }] },
-    ] },
-    { name: 'system_data', children: [f('locked — protected system area', '')] },
-  ],
-};
+      { name: 'user', children: [
+        { name: 'app', children: installed.map((g) => ({ name: g.id, children: [f('app.json', '1 KB')] })) },
+        { name: 'home', children: [{ name: '1a2b3c4d', children: [f('profile.dat', '12 KB')] }] },
+      ] },
+      { name: 'system_data', children: [f('locked — protected system area', '')] },
+    ],
+  };
+}
 
 // Resolve a folder by path segments; returns null for a bad path.
 export function resolvePath(tree, parts) {
@@ -145,43 +151,3 @@ export const powerOptions = [
   { id: 'reload', title: 'Reload VantaFlow', icon: 'restart', sub: 'Reloads this prototype (real)', live: true },
   { id: 'close', title: 'Close VantaFlow', icon: 'circle-x', sub: 'Return to the system home screen' },
 ];
-
-// Homebrew enabler per mock console (Settings → Console): GoldHEN on PS4, etaHEN on PS5.
-export const hens = {
-  ps4: {
-    name: 'GoldHEN', console: 'PS4 Pro', firmware: '9.00', logo: 'assets/goldhen/goldhen-logo.png', dir: '/data/GoldHEN', ext: 'prx',
-    status: 'Active', version: '2.4 (mock)', since: 'Boot + 00:42:13', about: 'GoldHEN is a PS4 homebrew enabler by SiSTRo.',
-    features: ['Homebrew Enabler', 'Debug Settings', 'Remote Package Install', 'Rest Mode Support', 'External HDD Support', 'Cheat & Patch Engine', 'Plugin Loader'],
-    plugins: [
-      { name: 'game_patch', desc: 'Applies XML game patches at launch.', enabled: true },
-      { name: 'fliprate_remover', desc: 'Removes frame-rate caps where patched.', enabled: true },
-      { name: 'no_share_watermark', desc: 'Hides share-screen watermark.', enabled: true },
-      { name: 'afr', desc: 'Application file redirector.', enabled: false },
-    ],
-  },
-  ps5: {
-    name: 'etaHEN', console: 'PS5', firmware: '4.03', logo: 'assets/etahen/etahen-logo.jpg', dir: '/data/etaHEN', ext: 'elf',
-    status: 'Active', version: '2.0 (mock)', since: 'Boot + 01:07:55', about: 'etaHEN is a PS5 homebrew enabler by LightningMods and contributors.',
-    features: ['Homebrew Enabler', 'Debug Settings', 'FTP Server', 'Cheats', 'Plugin Loader', 'Toolbox Menu'],
-    plugins: [
-      { name: 'ftp_server', desc: 'File transfer over the local network.', enabled: true },
-      { name: 'cheats', desc: 'In-game cheat engine.', enabled: true },
-      { name: 'toolbox', desc: 'Quick menu with homebrew tools.', enabled: true },
-      { name: 'klog_server', desc: 'Streams the kernel log for debugging.', enabled: false },
-    ],
-  },
-};
-
-export function sortItems(items, by) {
-  const out = [...items];
-  if (by === 'titleId') out.sort((a, b) => a.id.localeCompare(b.id));
-  else if (by === 'recent') out.sort((a, b) => (b.lastPlayed || '').localeCompare(a.lastPlayed || '') || a.title.localeCompare(b.title));
-  else out.sort((a, b) => a.title.localeCompare(b.title));
-  return out;
-}
-
-export function formatPlayed(mins) {
-  if (!mins) return '—';
-  const h = Math.floor(mins / 60);
-  return h ? `${h} h ${mins % 60} min` : `${mins} min`;
-}

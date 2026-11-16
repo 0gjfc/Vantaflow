@@ -1,5 +1,6 @@
-// Settings store: defaults, validation, persistence (localStorage), change events.
+// User preferences: defaults, validation, change events. Persisted through core/store.js.
 // Pure functions (sanitize, presetOf) are DOM-free so tests can import this in Node.
+import { load, save } from './store.js';
 
 export const PRESETS = {
   itemzflow: { label: 'Itemzflow Blue (default)', accent: '#1d86f0', highlight: '#1d86f0' },
@@ -20,6 +21,7 @@ export const DEFAULTS = Object.freeze({
   wrap: true, swapConfirm: false, showPrompts: true, sortBy: 'name',
   clock24: true, showTitleIds: true, navLabels: 'active', coverSize: 'itemzflow',
   console: 'ps4',
+  username: 'Player One', avatarColor: '#1d86f0', presence: 'online',
 });
 
 export const CHOICES = {
@@ -29,9 +31,19 @@ export const CHOICES = {
   navLabels: ['active', 'always'],
   coverSize: ['itemzflow', 'large'],
   console: ['ps4', 'ps5'],
+  presence: ['online', 'away', 'offline'],
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
+export const USERNAME = /^[\p{L}\p{N} _.-]{1,16}$/u;
+const CHECKS = {
+  accent: (v) => HEX.test(v),
+  highlight: (v) => HEX.test(v),
+  avatarColor: (v) => HEX.test(v),
+  bgDim: (v) => v >= 0 && v <= 100,
+  volume: (v) => v >= 0 && v <= 100,
+  username: (v) => USERNAME.test(v) && v.trim() === v,
+};
 
 // Keep only known keys whose value has the default's type and passes its constraint.
 export function sanitize(raw) {
@@ -41,8 +53,7 @@ export function sanitize(raw) {
     const v = raw[k];
     if (typeof v !== typeof DEFAULTS[k]) continue;
     if (CHOICES[k] && !CHOICES[k].includes(v)) continue;
-    if ((k === 'accent' || k === 'highlight') && !HEX.test(v)) continue;
-    if ((k === 'bgDim' || k === 'volume') && !(v >= 0 && v <= 100)) continue;
+    if (CHECKS[k] && !CHECKS[k](v)) continue;
     out[k] = v;
   }
   return out;
@@ -53,47 +64,28 @@ export function presetOf(s) {
   return hit ? hit[0] : 'custom';
 }
 
-const KEY = 'vantaflow.settings.v1';
-const IMG_KEY = 'vantaflow.background.v1';
-const ls = typeof localStorage !== 'undefined' ? localStorage : null;
-
-function read(key) {
-  try { return JSON.parse(ls?.getItem(key) ?? 'null'); } catch { return null; }
-}
-
-export const settings = sanitize(read(KEY));
+export const settings = sanitize(load('settings.v1'));
 const listeners = new Set();
 
 export const onChange = (fn) => listeners.add(fn);
 
 export function set(patch) {
   Object.assign(settings, sanitize({ ...settings, ...patch }));
-  try { ls?.setItem(KEY, JSON.stringify(settings)); } catch { /* storage full or disabled: keep in memory */ }
+  save('settings.v1', settings);
   listeners.forEach((fn) => fn(settings, patch));
 }
 
 export const resetAll = () => { setBgImage(null); set({ ...DEFAULTS }); };
 
-export function getBgImage() {
-  return ls?.getItem(IMG_KEY) || null;
-}
+// Custom background (data URL). Returns false when it does not fit in storage.
+export const getBgImage = () => load('background.v2');
+export const setBgImage = (dataUrl) => save('background.v2', dataUrl);
 
-// Favourites (game/app ids), persisted locally.
-const FAV_KEY = 'vantaflow.favorites.v1';
-export const favorites = new Set(Array.isArray(read(FAV_KEY)) ? read(FAV_KEY) : []);
+// Favourite title ids.
+const savedFavs = load('favorites.v1', []);
+export const favorites = new Set(Array.isArray(savedFavs) ? savedFavs : []);
 export function toggleFavorite(id) {
   if (!favorites.delete(id)) favorites.add(id);
-  try { ls?.setItem(FAV_KEY, JSON.stringify([...favorites])); } catch { /* keep in memory */ }
+  save('favorites.v1', [...favorites]);
   return favorites.has(id);
-}
-
-// Returns false when the image does not fit in storage.
-export function setBgImage(dataUrl) {
-  try {
-    if (dataUrl) ls?.setItem(IMG_KEY, dataUrl);
-    else ls?.removeItem(IMG_KEY);
-    return true;
-  } catch {
-    return false;
-  }
 }
