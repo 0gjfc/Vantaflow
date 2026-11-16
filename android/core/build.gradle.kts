@@ -1,6 +1,4 @@
-plugins { kotlin("jvm") version "2.0.21" }
-
-repositories { mavenCentral() }
+plugins { kotlin("jvm") }
 
 dependencies {
     // org.json is built into Android, so the app must not bundle a second copy: compile against

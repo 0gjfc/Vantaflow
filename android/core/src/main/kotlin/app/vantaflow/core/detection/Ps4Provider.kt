@@ -8,7 +8,7 @@ import app.vantaflow.core.model.Unavailable
 import java.io.IOException
 
 class Ps4Provider(
-    private val port: Int = Ddp.SPECS.getValue(Generation.PS4).port,
+    override val port: Int = Ddp.SPECS.getValue(Generation.PS4).port,
     private val timeoutMs: Int = 2000,
     private val transport: UdpTransport = DatagramTransport,
 ) : ConsoleProvider {
@@ -38,8 +38,8 @@ class Ps4Provider(
     }
 
     override fun probe(address: String): ProbeReport = try {
-        val replies = transport.exchange(address, port, Ddp.searchMessage(Generation.PS4), timeoutMs, broadcast = false, first = true)
-        val reply = replies.firstOrNull { it.from == address } ?: replies.firstOrNull()
+        val replies = transport.exchange(address, port, Ddp.searchMessage(Generation.PS4), timeoutMs, broadcast = false, first = true, onlyFrom = address)
+        val reply = replies.firstOrNull { it.from == address } // never a reply from another device
         reply?.let { read(it.text, address) } ?: ProbeReport(name, generation, method, address, listOf(attempt.format(address)), errors = listOf(
             ErrorInfo("timeout", "No PS4 discovery reply from $address within ${timeoutMs / 1000.0} s.", true,
                 "Check the address, that the console is on, and that it is on this network. No reply does not prove the device is not a PS4."),

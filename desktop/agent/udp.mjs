@@ -10,8 +10,10 @@ export class NetworkError extends Error {
 }
 
 // Sends `message` to address:port and resolves with every reply received before `timeoutMs`
-// (or right after the first reply when `first` is true). Rejects only on socket errors.
-export function exchange({ address, port, message, timeoutMs = 2000, broadcast = false, first = false }) {
+// (or right after the first reply when `first` is true). With `onlyFrom`, replies from any other
+// address are ignored, so a probe of one console can never be answered by another device.
+// Rejects only on socket errors.
+export function exchange({ address, port, message, timeoutMs = 2000, broadcast = false, first = false, onlyFrom = null }) {
   return new Promise((resolve, reject) => {
     const socket = dgram.createSocket('udp4');
     const replies = [];
@@ -27,6 +29,7 @@ export function exchange({ address, port, message, timeoutMs = 2000, broadcast =
     const timer = setTimeout(() => finish(), timeoutMs);
     socket.on('error', finish);
     socket.on('message', (buf, rinfo) => {
+      if (onlyFrom && rinfo.address !== onlyFrom) return;
       replies.push({ text: buf.toString('utf8'), from: rinfo.address, port: rinfo.port });
       if (first) finish();
     });

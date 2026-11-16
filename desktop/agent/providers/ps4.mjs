@@ -47,8 +47,8 @@ export function createPs4Provider({ port = DDP.ps4.port, timeoutMs = 2000, send 
 
     async probe(address) {
       try {
-        const replies = await send({ address, port, message: searchMessage('ps4'), timeoutMs, first: true });
-        const reply = replies.find((x) => x.from === address) ?? replies[0];
+        const replies = await send({ address, port, message: searchMessage('ps4'), timeoutMs, first: true, onlyFrom: address });
+        const reply = replies.find((x) => x.from === address); // never a reply from another device
         if (reply) return this.read(reply.text, address);
         const r = report({ provider: this.name, generation: 'ps4', method: this.method, address });
         r.attempted.push(`DDP SRCH (protocol ${DDP.ps4.protocolVersion}) to ${address}:${port}`);

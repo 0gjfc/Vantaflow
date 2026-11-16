@@ -23,12 +23,13 @@ data class UdpReply(val text: String, val from: String)
 
 fun interface UdpTransport {
     // Sends one datagram and returns every reply received before timeoutMs (or the first one).
-    // Throws IOException on socket errors; no reply is an empty list, not an error.
-    fun exchange(address: String, port: Int, message: String, timeoutMs: Int, broadcast: Boolean, first: Boolean): List<UdpReply>
+    // onlyFrom: ignore replies from any other address, so a probe of one console can never be
+    // answered by another device. Throws IOException on socket errors; no reply is an empty list.
+    fun exchange(address: String, port: Int, message: String, timeoutMs: Int, broadcast: Boolean, first: Boolean, onlyFrom: String?): List<UdpReply>
 }
 
 object DatagramTransport : UdpTransport {
-    override fun exchange(address: String, port: Int, message: String, timeoutMs: Int, broadcast: Boolean, first: Boolean): List<UdpReply> =
+    override fun exchange(address: String, port: Int, message: String, timeoutMs: Int, broadcast: Boolean, first: Boolean, onlyFrom: String?): List<UdpReply> =
         DatagramSocket().use { socket ->
             socket.broadcast = broadcast
             val bytes = message.toByteArray(Charsets.UTF_8)
@@ -42,7 +43,9 @@ object DatagramTransport : UdpTransport {
                 socket.soTimeout = left
                 val packet = DatagramPacket(buf, buf.size)
                 try { socket.receive(packet) } catch (e: SocketTimeoutException) { break }
-                replies += UdpReply(String(packet.data, 0, packet.length, Charsets.UTF_8), packet.address.hostAddress ?: "")
+                val from = packet.address.hostAddress ?: ""
+                if (onlyFrom != null && from != onlyFrom) continue
+                replies += UdpReply(String(packet.data, 0, packet.length, Charsets.UTF_8), from)
                 if (first) break
             }
             replies
@@ -71,6 +74,7 @@ data class ProbeReport(
 interface ConsoleProvider {
     val name: String
     val generation: Generation
+    val port: Int
     val method: String
     fun read(text: String, address: String): ProbeReport // parses one reply (also used by discovery)
     fun probe(address: String): ProbeReport
@@ -139,15 +143,14 @@ data class DiscoveryResult(val devices: List<ProbeReport>, val errors: List<Erro
 fun discover(
     providers: List<ConsoleProvider>,
     targets: List<String> = LanAddress.broadcastTargets(),
-    ports: Map<Generation, Int> = Ddp.SPECS.mapValues { it.value.port },
     timeoutMs: Int = 2500,
     transport: UdpTransport = DatagramTransport,
     allowLoopback: Boolean = false,
 ): DiscoveryResult {
-    val jobs = providers.flatMap { p -> targets.map { t -> Triple(p, t, ports.getValue(p.generation)) } }
+    val jobs = providers.flatMap { p -> targets.map { t -> Triple(p, t, p.port) } }
     val results = jobs.map { (p, target, port) ->
         CompletableFuture.supplyAsync {
-            runCatching { transport.exchange(target, port, Ddp.searchMessage(p.generation), timeoutMs, broadcast = true, first = false) }
+            runCatching { transport.exchange(target, port, Ddp.searchMessage(p.generation), timeoutMs, broadcast = true, first = false, onlyFrom = null) }
         }
     }.map { it.join() }
     val devices = linkedMapOf<String, ProbeReport>()

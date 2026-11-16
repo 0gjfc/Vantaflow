@@ -11,7 +11,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.vantaflow.core.compat.CompatibilityEngine
 import app.vantaflow.core.compat.EnvironmentData
+import app.vantaflow.core.detection.ConsoleProvider
 import app.vantaflow.core.detection.ConsoleRef
+import app.vantaflow.core.detection.LanAddress
 import app.vantaflow.core.detection.ConsoleStore
 import app.vantaflow.core.detection.DetectionException
 import app.vantaflow.core.detection.DetectionService
@@ -34,7 +36,17 @@ import org.json.JSONObject
 
 data class Notice(val title: String, val text: String, val ok: Boolean)
 
-class ConsolesModel(app: Application) : AndroidViewModel(app) {
+// The (Application) constructor is the one the app uses. The other one exists for tests, which
+// point the providers at fake consoles on 127.0.0.1 (never at a real network).
+class ConsolesModel internal constructor(
+    app: Application,
+    private val ps4: ConsoleProvider,
+    private val ps5: ConsoleProvider,
+    private val discoveryTargets: () -> List<String>,
+    private val allowLoopback: Boolean,
+) : AndroidViewModel(app) {
+    constructor(app: Application) : this(app, Ps4Provider(), Ps5Provider(), LanAddress::broadcastTargets, allowLoopback = false)
+
     private val prefs = app.getSharedPreferences("vantaflow", Context.MODE_PRIVATE)
     private fun asset(path: String) = JSONObject(getApplication<Application>().assets.open(path).bufferedReader().use { it.readText() })
 
@@ -43,9 +55,7 @@ class ConsolesModel(app: Application) : AndroidViewModel(app) {
         override fun load() = prefs.getString("lan-consoles", null)
         override fun save(json: String) = prefs.edit().putString("lan-consoles", json).apply()
     }
-    private val ps4 = Ps4Provider()
-    private val ps5 = Ps5Provider()
-    val lan = LanConsoles(store, mapOf(Generation.PS4 to ps4, Generation.PS5 to ps5))
+    val lan = LanConsoles(store, mapOf(Generation.PS4 to ps4, Generation.PS5 to ps5), allowLoopback)
     private val lanService = DetectionService(lan)
     private val demo = MockDetectionProvider(asset("mock-consoles.json"))
     private val demoService = DetectionService(demo)
@@ -107,7 +117,7 @@ class ConsolesModel(app: Application) : AndroidViewModel(app) {
 
     // Only called after the user agreed to the explanation in DiscoveryConsent.
     fun discoverConsoles() = work("Searching this network…") {
-        val result = withContext(Dispatchers.IO) { discover(listOf(ps4, ps5)) }
+        val result = withContext(Dispatchers.IO) { discover(listOf(ps4, ps5), discoveryTargets(), allowLoopback = allowLoopback) }
         if (result.devices.isEmpty()) {
             notice = Notice("No consoles answered", "No answer does not mean there is none: the console may be off, on another network, or have network features off in rest mode. Add it by IP address instead." +
                 (result.errors.firstOrNull()?.let { " (${it.message})" } ?: ""), false)

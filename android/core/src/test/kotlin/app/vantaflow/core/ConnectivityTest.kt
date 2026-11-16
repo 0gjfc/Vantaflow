@@ -139,7 +139,7 @@ class ConnectivityTest {
     }
 
     @Test fun networkErrorsAreReported() {
-        val failing = UdpTransport { _, _, _, _, _, _ -> throw IOException("Network is unreachable") }
+        val failing = UdpTransport { _, _, _, _, _, _, _ -> throw IOException("Network is unreachable") }
         val r = Ps4Provider(transport = failing).probe("192.168.1.20")
         assertEquals("network-error", r.errors.single().code)
         assertNull(r.retrieved)
@@ -149,12 +149,11 @@ class ConnectivityTest {
         val ps4 = fake { sample("ps4-standby-755") }
         val ps5 = fake { sample("ps5-standby") }
         val providers = listOf(Ps4Provider(port = ps4.port), Ps5Provider(port = ps5.port))
-        val ports = mapOf(Generation.PS4 to ps4.port, Generation.PS5 to ps5.port)
-        val found = discover(providers, listOf("127.0.0.1"), ports, 500, allowLoopback = true)
+        val found = discover(providers, listOf("127.0.0.1"), 500, allowLoopback = true)
         assertEquals(setOf(Generation.PS4, Generation.PS5), found.devices.map { it.retrieved!!.generation }.toSet())
         assertEquals(1, ps4.received.size)
         assertEquals(1, ps5.received.size)
-        assertEquals(0, discover(providers, listOf("127.0.0.1"), ports, 500, allowLoopback = false).devices.size)
+        assertEquals(0, discover(providers, listOf("127.0.0.1"), 500, allowLoopback = false).devices.size)
     }
 
     @Test fun savedConsolesConnectDisconnectAndRemove() {
@@ -206,6 +205,67 @@ class ConnectivityTest {
         assertNull(d.console.generation)
         assertEquals("timeout", d.errors.first().code)
         assertEquals(CompatStatus.NOT_DETECTED, engine.evaluate(d).status)
+    }
+
+    // Reliability (Stage 4.1): a probe of one address is never answered by another device.
+    @Test fun aReplyFromAnotherAddressIsIgnored() {
+        // The probe goes to 127.0.0.1; a different device (127.0.0.2) answers as a PS4.
+        val listen = DatagramSocket(0, InetAddress.getByName("127.0.0.1"))
+        val other = DatagramSocket(0, InetAddress.getByName("127.0.0.2"))
+        thread(isDaemon = true) {
+            val p = DatagramPacket(ByteArray(2048), 2048)
+            try { listen.receive(p) } catch (e: IOException) { return@thread }
+            val reply = sample("ps4-on-900").toByteArray()
+            other.send(DatagramPacket(reply, reply.size, p.address, p.port))
+        }
+        val r = Ps4Provider(port = listen.localPort, timeoutMs = 600).probe("127.0.0.1")
+        listen.close()
+        other.close()
+        assertNull(r.retrieved, "a PS4 reply from 127.0.0.2 must not identify 127.0.0.1")
+        assertEquals("timeout", r.errors.single().code)
+    }
+
+    // Reliability (Stage 4.1): random and mutated replies never produce a false identification.
+    @Test fun mutatedRepliesNeverIdentifyFalsely() {
+        val rnd = java.util.Random(4)
+        val replies = samples.values.map { it.getString("reply") }
+        val lines = replies.flatMap { it.split("\n") }.filter { it.isNotBlank() }
+        val alphabet = "HTTP/1.1 200 Ok620host-type:PS4PS5device-discovery-protocol-version:0002002000030010\n :-xyz"
+        var identified = 0
+        repeat(5000) { i ->
+            // a real sample with lines dropped, replaced or mixed in · random sample lines · random characters
+            val text = when (i % 3) {
+                0 -> replies[rnd.nextInt(replies.size)].split("\n").joinToString("\n") { l ->
+                    listOf(l, l, l, "", lines[rnd.nextInt(lines.size)], l.take(rnd.nextInt(l.length + 1)))[rnd.nextInt(6)]
+                }
+                1 -> (0 until rnd.nextInt(8)).joinToString("\n") { lines[rnd.nextInt(lines.size)] }
+                else -> (0 until rnd.nextInt(200)).map { alphabet[rnd.nextInt(alphabet.length)] }.joinToString("")
+            }
+            for (provider in listOf(Ps4Provider(), Ps5Provider())) {
+                val r = provider.read(text, "192.168.1.20")
+                if (r.retrieved == null) {
+                    assertNotEquals(ConnectionState.CONNECTED, DetectionResult.fromJson(LanConsoles.detectionOf(r)).connection.state)
+                    continue
+                }
+                identified++
+                val spec = Ddp.SPECS.getValue(provider.generation)
+                val first = text.split(Regex("\\r?\\n")).map { it.trim() }.firstOrNull { it.isNotEmpty() }.orEmpty()
+                assertTrue(first.startsWith("HTTP/1.1 "), "identified without a status line: $text")
+                assertTrue(text.contains("host-type:${spec.hostType}") && text.contains("device-discovery-protocol-version:${spec.protocolVersion}"), text)
+                assertEquals(provider.generation, r.retrieved!!.generation)
+            }
+        }
+        assertTrue(identified > 100, "fuzz produced enough valid replies to be meaningful ($identified)")
+    }
+
+    // Demonstration consoles and real consoles never mix.
+    @Test fun mockConsolesStaySeparateFromRealOnes() {
+        val mock = app.vantaflow.core.detection.MockDetectionProvider(json("mock-consoles.json"))
+        assertTrue(mock.list().none { LanConsoles.isLan(it.id) }, "no mock id looks like a saved real console")
+        assertTrue(mock.list().all { DetectionResult.fromJson(mock.detect(it.id)).console.source in setOf("mock", "last-known") }, "demo data never claims a DDP source")
+        val lan = LanConsoles(MemoryStore())
+        assertTrue(lan.list().isEmpty(), "real consoles start empty; demo consoles are never saved as real")
+        assertFailsWith<DetectionException> { lan.detect(mock.list().first().id) }
     }
 
     @Test fun henStatusUsesOnlyVerifiedEvidence() {

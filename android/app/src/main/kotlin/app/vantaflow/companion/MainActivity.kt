@@ -83,12 +83,20 @@ private fun whenText(iso: String?) = iso?.let {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary = Accent, background = Background, surface = Background, surfaceVariant = PanelGrey)) {
-                Surface(Modifier.fillMaxSize(), color = Background) { App(viewModel()) }
-            }
-        }
+        setContent { VantaFlowApp(viewModel()) }
     }
+}
+
+// VantaFlow look (shared/design-tokens.json) around the screens. Used by the activity and the tests.
+private val Colors = darkColorScheme(
+    primary = Accent, onPrimary = Color.White, background = Background, onBackground = Color.White,
+    surface = Background, onSurface = Color.White, surfaceVariant = PanelGrey, onSurfaceVariant = Dim,
+    surfaceContainerHigh = Color(0xFF2A2A2A), outline = PanelGrey,
+)
+
+@Composable
+internal fun VantaFlowApp(m: ConsolesModel) = MaterialTheme(colorScheme = Colors) {
+    Surface(Modifier.fillMaxSize(), color = Background, contentColor = Color.White) { App(m) }
 }
 
 @Composable

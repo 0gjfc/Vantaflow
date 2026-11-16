@@ -144,6 +144,60 @@ eq(noLoopback.devices.length, 0, 'replies from non-local addresses are ignored')
 await fakePs4.close();
 await fakePs5.close();
 
+// ------------------------------------------------------------ reliability (Stage 4.1)
+// A probe of one address is never answered by another device: 127.0.0.2 answers as a PS4 to a
+// probe of 127.0.0.1, and the probe must time out instead of identifying 127.0.0.1.
+{
+  const dgram = await import('node:dgram');
+  const listen = dgram.createSocket('udp4');
+  const other = dgram.createSocket('udp4');
+  await new Promise((done) => listen.bind(0, '127.0.0.1', done));
+  await new Promise((done) => other.bind(0, '127.0.0.2', done));
+  listen.on('message', (_, rinfo) => other.send(Buffer.from(reply('ps4-on-900')), rinfo.port, rinfo.address));
+  const r = await createPs4Provider({ port: listen.address().port, timeoutMs: 500 }).probe('127.0.0.1');
+  listen.close();
+  other.close();
+  ok(!r.retrieved.generation && r.errors[0].code === 'timeout', 'a reply from another address never identifies the probed address');
+}
+
+// Random and mutated replies never produce a false identification.
+{
+  let seed = 4; // mulberry32
+  const rnd = (n) => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return (((t ^ (t >>> 14)) >>> 0) % n); };
+  const lines = samples.flatMap((s) => s.reply.split('\n')).filter(Boolean);
+  const alphabet = 'HTTP/1.1 200 Ok620host-type:PS4PS5device-discovery-protocol-version:0002002000030010\n :-xyz';
+  let identified = 0;
+  let wrong = 0;
+  for (let i = 0; i < 5000; i++) {
+    // a real sample with lines dropped, replaced or mixed in · random sample lines · random characters
+    const base = samples[rnd(samples.length)].reply.split('\n');
+    const text = [
+      () => base.map((l) => [l, l, l, '', lines[rnd(lines.length)], l.slice(0, rnd(l.length + 1))][rnd(6)]).join('\n'),
+      () => Array.from({ length: rnd(8) }, () => lines[rnd(lines.length)]).join('\n'),
+      () => Array.from({ length: rnd(200) }, () => alphabet[rnd(alphabet.length)]).join(''),
+    ][i % 3]();
+    for (const [gen, provider] of [['ps4', createPs4Provider()], ['ps5', createPs5Provider()]]) {
+      const r = provider.read(text, '192.168.1.20');
+      if (!r.retrieved.generation) {
+        if (r.detection.connection.state === 'connected') wrong++;
+        continue;
+      }
+      identified++;
+      const first = text.split(/\r?\n/).map((l) => l.trim()).find(Boolean) ?? '';
+      if (!first.startsWith('HTTP/1.1 ') || !text.includes(`host-type:${DDP[gen].hostType}`) || !text.includes(`device-discovery-protocol-version:${DDP[gen].protocolVersion}`) || r.retrieved.generation !== gen) wrong++;
+    }
+  }
+  ok(identified > 100, `fuzz produced enough valid replies to be meaningful (${identified})`);
+  ok(wrong === 0, `10 000 mutated replies: no false identification (${identified} valid identifications)`);
+}
+
+// Demonstration consoles and real consoles never mix.
+{
+  const mock = read('shared/mock-consoles.json').consoles;
+  ok(mock.every((c) => !c.id.startsWith('lan-')), 'no demo console id looks like a saved real console');
+  ok(mock.every((c) => c.detection.console.source !== 'ddp' && c.detection.connection.transport !== 'ddp-udp'), 'demo data never claims a DDP source');
+}
+
 // ------------------------------------------------------------ local agent API
 const agentPs4 = await startFakeConsole(replyMap('ps4-on-900'));
 const PORT = 18000 + Math.floor(Math.random() * 1000);
