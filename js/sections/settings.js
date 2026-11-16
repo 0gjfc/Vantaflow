@@ -61,7 +61,7 @@ const ROWS = () => [
       valueHTML: `${bar((d.used / d.total) * 100)}<span class="val">${d.free.toFixed(1)} GB free</span>` }))
     : [{ id: 'storage', type: 'info', noAction: true, dev: null, title: 'No storage information', sub: 'The active console is not connected' }]),
   { group: 'Console' },
-  { id: 'profile', type: 'profile', title: 'Console profile', sim: true, desc: 'PS4 and PS5 are separate profiles. Each keeps its own settings, favourites, background image and selected console; switching loads the other profile.' },
+  { id: 'profile', type: 'profile', title: 'Console profile', sim: true, desc: 'PS4 and PS5 are separate profiles: each keeps its own appearance and interface settings, favourites, background image and selected console. Your name, avatar colour and online status are shared unless you turn on separate profiles on the Profile page.' },
   { id: 'consoles', type: 'action', title: 'Manage consoles…', desc: 'Connection, firmware, homebrew status and compatibility of each console, and which one is active.', run: (panel) => panel.app.goto('consoles') },
   { group: 'System' },
   { id: 'resetAll', type: 'action', title: 'Reset all settings', desc: 'Restores every option, colour, background and profile setting to the defaults.', run: resetEverything },

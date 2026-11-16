@@ -56,8 +56,16 @@ Versions are `major.minor` with a two-digit minor (`9.00`, `10.01`). Anything el
 ```
 Every check adds a reason; the worst reason decides `status`.
 
-## Customization preferences
-Per console profile (PS4 and PS5 are kept apart). Desktop: `DEFAULTS` in `js/core/settings.js`, stored as `vantaflow.settings.ps4` / `vantaflow.settings.ps5`. Android mirrors a subset (`CustomizationPrefs`): accent, highlight, background mode, animations, reflections. Per-profile storage also holds favourites (`vantaflow.favorites.<profile>`), the custom background (`vantaflow.background.<profile>`) and the selected console (`vantaflow.console.<profile>`).
+## Customization preferences and account
+Two parts, kept apart on purpose:
+
+- **Console preferences — always per console** (PS4 and PS5 never mix). Desktop: `DEFAULTS` in `js/core/settings.js` minus the account keys, stored as `vantaflow.settings.ps4` / `vantaflow.settings.ps5`, plus favourites (`vantaflow.favorites.<profile>`), the custom background (`vantaflow.background.<profile>`) and the selected console (`vantaflow.console.<profile>`). Android: `CustomizationPrefs` (accent, highlight, background mode, animations, reflections).
+- **VantaFlow account — shared by default.** `username`, `avatarColor`, `presence` (`ACCOUNT_KEYS`). Stored in `vantaflow.account.shared`; when `vantaflow.accounts.separate` is `true` (Profile → *Separate PS4 and PS5 profiles*), in `vantaflow.account.ps4` / `vantaflow.account.ps5` instead. Turning it on starts each console from the current account; turning it off makes the current account the shared one. Android: `AccountPrefs` and `Profiles.accountFor(generation)`.
+
+```json
+{ "separateAccounts": false, "shared": { "username": "Player One", "avatarColor": "#1d86f0", "presence": "online" },
+  "perConsole": { "ps5": { "username": "PS5_Player" } }, "consoles": { "ps4": { "accent": "#1d86f0" }, "ps5": { "accent": "#22b07d" } } }
+```
 
 ## Adding a console model or environment
 

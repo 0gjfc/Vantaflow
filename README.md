@@ -2,7 +2,7 @@
 
 VantaFlow is an Itemzflow-inspired PlayStation dashboard. Itemzflow's horizontal coverflow is the centrepiece, and a subtle top navigation bar adds the other PlayStation sections.
 
-**Stage 3 status:** PS4 and PS5 are separate platform modules with their own models, homebrew environment (GoldHEN / etaHEN), customization capabilities and compatibility rules. A compatibility engine rates a console from researched, dated release data, a detection architecture runs with a mock provider, a new **Consoles** page manages consoles, PS4 and PS5 profiles keep separate settings, and an Android companion core shares the same data and rules. Everything that would need a console is still **demonstration data**, clearly labelled. Nothing talks to a console, installs packages, runs payloads or touches system files.
+**Stage 3 status:** PS4 and PS5 are separate platform modules with their own models, homebrew environment (GoldHEN / etaHEN), customization capabilities and compatibility rules. A compatibility engine rates a console from researched, dated release data, a detection architecture runs with a mock provider, a **Consoles** page (opened from the console status in the top bar) manages consoles, PS4 and PS5 profiles keep separate console settings while the VantaFlow account is shared by default, and an Android companion core shares the same data and rules. Everything that would need a console is still **demonstration data**, clearly labelled. Nothing talks to a console, installs packages, runs payloads or touches system files.
 
 Stage 3 documents: [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
 
@@ -26,6 +26,7 @@ Open <http://localhost:8080>. Press **F11** for full screen.
 ```bash
 node tests/logic.test.mjs                              # settings validation, PS4/PS5 libraries, file tree (Node 18+)
 node tests/compat.test.mjs                             # compatibility engine, researched data, detection (Node 18+)
+node tests/profiles.test.mjs                           # console profiles and the shared account (Node 18+)
 
 python3 -m http.server 8080 &                          # end-to-end in a real browser (needs Playwright installed)
 node tests/ui-smoke.cjs http://localhost:8080/
@@ -34,9 +35,10 @@ cd android && gradle :core:test                        # Android core: same vect
 node tools/build-docs.mjs                              # regenerate docs/compatibility.md and docs/customization.md
 ```
 
-- `tests/compat.test.mjs` (204 checks): integrity of the researched data, every mock console gets its expected status with reasons, targeted rules (e.g. etaHEN 2.4B on 8.20 is Unknown because 2.4B does not restate 8.20), the detection service (timeouts and errors become Not detected), design tokens vs CSS, and **20 000 random configurations** proving that nothing unverified or undocumented is ever rated Compatible.
-- `tests/ui-smoke.cjs` (20 checks): every section, carousel, selection and simulated launch, accent colour, animation speed, background preview → apply, profile editing, notifications, File Manager, storage, a simulated gamepad, the Consoles page (all 11 consoles and their statuses, detect again, unknown device refused), switching to a PS5 console (etaHEN, PS5 library, separate settings), preferences after a restart per profile, logo text fallback, window sizes. Playwright is only for this test.
-- `android/core` (3 test groups): the Kotlin engine gives the same status as the desktop for every mock console.
+- `tests/compat.test.mjs` (494 checks): integrity of the researched data, every mock console gets its expected status with reasons, targeted rules (e.g. etaHEN 2.4B on 8.20 is Unknown because 2.4B does not restate 8.20), the strict etaHEN rule for every release × firmware, the detection service (timeouts and errors become Not detected), design tokens vs CSS, and **20 000 random configurations** proving that nothing unverified or undocumented is ever rated Compatible.
+- `tests/profiles.test.mjs`: shared account by default, separate PS4/PS5 accounts when turned on, console settings always separate, restart, upgrade from Stage 3.
+- `tests/ui-smoke.cjs` (22 checks): every section, the 11-icon top bar with Consoles opened from the console status, carousel, selection and simulated launch, accent colour, animation speed, background preview → apply, profile editing, notifications, File Manager, storage, a simulated gamepad, the Consoles page (all 11 consoles and their statuses, detect again, unknown device refused), switching to a PS5 console (etaHEN, PS5 library, shared account, separate console settings), turning on separate PS4/PS5 profiles, preferences after a restart per profile, logo text fallback, window sizes. Playwright is only for this test.
+- `android/core` (4 test groups): the Kotlin engine gives the same status as the desktop for every mock console; the account model is shared unless separate accounts are on.
 
 ### Manual checklist
 
@@ -44,8 +46,8 @@ node tools/build-docs.mjs                              # regenerate docs/compati
 2. **L1 / R1 (Q / E)** visit every section. **↑** moves focus to the top bar; there **← →** switches section and **↓** returns.
 3. **Settings → Appearance:** choose an image, check the preview, apply it; change accent / highlight; **Restore default appearance**.
 4. **Settings → Interface:** turn animations, reflections, sounds and music on/off; change animation speed. Reload the page: everything stays.
-5. **Consoles** (top bar, or click the console status top-right): pick **Living room PS5**. The badge becomes etaHEN, the status shows PS5 · FW 8.20, Games shows PS5 titles (white PS5 case band) plus PS4 titles, storage, files and settings change to the PS5 profile. Pick a PS4 console to return; its settings are untouched. △ re-runs detection.
-6. **Profile** (top-left): ✕ on Username to rename; ← → on Avatar colour and Online status.
+5. **Consoles** (click the console status top-right, or L1/R1 past the homebrew badge): pick **Living room PS5**. The badge becomes etaHEN, the status shows PS5 · FW 8.20, Games shows PS5 titles (white PS5 case band) plus PS4 titles, and storage, files and console settings change to the PS5 profile; your name and avatar stay the same. Pick a PS4 console to return; its settings are untouched. △ re-runs detection.
+6. **Profile** (top-left): ✕ on Username to rename; ← → on Avatar colour and Online status. **Separate PS4 and PS5 profiles** (off by default) gives each console its own name, avatar and status, for people with different PlayStation accounts.
 7. Click the **storage** figures (bottom-left) for the storage breakdown, or the **console status** (top-right) for the Consoles page.
 8. Resize the window: the 1920×1080 stage scales and letterboxes.
 
@@ -76,7 +78,7 @@ Simulated screens carry a yellow **SIMULATED** tag, simulated actions show a yel
 | Custom background: preview, apply, restore | File Manager contents (browsing works, files do not open) |
 | Accent / highlight colours, presets, restore defaults | Power: rest mode, restart, power off, close |
 | Animation on/off and speed, sounds, generated background music | Console model, firmware, storage figures |
-| Profile: username, avatar colour, online status (saved) | GoldHEN and etaHEN status, plugins and tools |
+| Profile: username, avatar colour, online status — shared by PS4 and PS5, or separate when turned on (saved) | GoldHEN and etaHEN status, plugins and tools |
 | Favourites and notification read state (saved) | |
 | PS4 / PS5 profiles with separate settings, storage maths, clock, "Reload VantaFlow" | Every console on the Consoles page (mock detection provider) |
 | Compatibility engine and its reasons (real logic over researched data) | Detection results it is applied to |
@@ -92,12 +94,13 @@ Simulated screens carry a yellow **SIMULATED** tag, simulated actions show a yel
 | Firmware rule | Each release lists all its firmware → missing = unsupported | Releases only mention changes → not restated = unknown |
 | Extra checks | — | Required parts (ELF loader since 2.4B), kstuff, disc features on Digital models, per-firmware feature restrictions |
 | Games | PS4 titles (CUSA) | PS5 titles (PPSA) + backward-compatible PS4 titles |
-| Settings profile | `vantaflow.settings.ps4` | `vantaflow.settings.ps5` |
+| Console settings, favourites, background, active console | `vantaflow.*.ps4` | `vantaflow.*.ps5` |
+| VantaFlow account (name, avatar, status) | `vantaflow.account.shared` by default; `vantaflow.account.ps4` / `.ps5` when separate profiles are on | |
 | Logo | `assets/goldhen/goldhen-logo.png` | `assets/etahen/etahen-logo.png` |
 
 **Compatibility states:** Compatible · Partially compatible · Unsupported · Unknown · Not detected. Each check (connection, generation, model, firmware, environment, release, required parts) adds a reason, the worst one wins, and a final guard turns any unverified configuration into Unknown. Full rules and per-release data: [docs/compatibility.md](docs/compatibility.md).
 
-**Consoles page:** connection, network, generation, model, firmware (with evidence), homebrew status, compatibility with every reason, supported / not supported / not verified features, requirements, limitations, customization summary and last detection time. ✕ makes a console active (switching to its PS4 or PS5 profile), △ detects again. A device not identified as PS4 or PS5 cannot be made active.
+**Consoles page** (opened from the console status indicator, top right; the top bar keeps its 11 icons): connection, network, generation, model, firmware (with evidence), homebrew status, compatibility with every reason, supported / not supported / not verified features, requirements, limitations, customization summary and last detection time. ✕ makes a console active (switching to its PS4 or PS5 profile), △ detects again. A device not identified as PS4 or PS5 cannot be made active.
 
 **Mock consoles** (`shared/mock-consoles.json`): PS4 supported GoldHEN · PS4 unsupported firmware · PS4 without GoldHEN · PS4 with only an open port · PS5 supported etaHEN · PS5 partial (untested toolbox support) · PS5 unsupported firmware · PS5 without etaHEN · PS5 with an unresearched etaHEN version · unknown console · disconnected console.
 
@@ -174,10 +177,10 @@ tests/                     logic.test.mjs, compat.test.mjs (Node), ui-smoke.cjs 
 - **Interface · Navigation:** wrap-around, confirm with ○, sort order, button prompts.
 - **Interface · Display:** 12/24-hour clock, Title IDs, navigation labels, cover size.
 - **Storage (simulated):** each drive with used / free space and a breakdown by Games, Applications, Captures & media, Saved data, System, Backups.
-- **Console:** console profile (PS4 · GoldHEN or PS5 · etaHEN, each with its own settings) and a link to the Consoles page.
+- **Console:** console profile (PS4 · GoldHEN or PS5 · etaHEN, each with its own console settings) and a link to the Consoles page.
 - **System:** reset everything.
 
-Saved in `localStorage` under `vantaflow.*`: active profile, and per profile the settings, custom background, favourites and selected console; notification read state is shared. Clearing the browser's site data resets VantaFlow.
+Saved in `localStorage` under `vantaflow.*`: active profile; per console profile the appearance and interface settings, custom background, favourites and selected console; the VantaFlow account (shared, or per console when separate profiles are on); notification read state (shared). Clearing the browser's site data resets VantaFlow.
 
 ## 8. What was taken from Itemzflow
 
@@ -209,7 +212,13 @@ Plain HTML, CSS and JavaScript ES modules, with no framework, build tools or run
 
 No jailbreak exploits, firmware exploitation, payload execution, authentication or DRM bypass, unauthorised console access, firmware or protected-file changes, PKG or APK installation, Y2JB, automatic updates or downgrades, console communication or real power control. Detection is mock-only and all console information is simulated. Rules for any future console operation (compatibility gate, explicit authorisation, dry run, backup, undo) are in [docs/safety-and-recovery.md](docs/safety-and-recovery.md).
 
-## 11. Researched, simulated, unverified
+## 11. Stage 3 review decisions
+
+1. **etaHEN stays strict.** If an etaHEN release does not itself establish a firmware, the result is Unknown, not Compatible. Tested for every release × firmware in `tests/compat.test.mjs`.
+2. **One VantaFlow account by default.** Name, avatar colour and online status are shared by PS4 and PS5; Profile → *Separate PS4 and PS5 profiles* splits them for different PlayStation accounts. Appearance, favourites, backgrounds and the active console are always per console.
+3. **No 12th icon.** The Consoles page opens from the console status indicator; the top navigation keeps its 11 icons.
+
+## 12. Researched, simulated, unverified
 
 | | |
 |---|---|
@@ -218,7 +227,7 @@ No jailbreak exploits, firmware exploitation, payload execution, authentication 
 | **Simulated** | Every console, detection result, firmware value and homebrew status; GoldHEN / etaHEN plugins and tools; all console actions. |
 | **Unverified** | GoldHEN betas 2.4b5–2.4b16.2 (not published as releases); etaHEN releases without firmware statements (never rated compatible); release asset file names; PS4 profile customization; anything about real detection, which needs a provider that does not exist yet. |
 
-## 12. Known limits
+## 13. Known limits
 
 - On a real console, text entry (username) would use the system keyboard; the browser shows a text field.
 - The gamepad was tested with a simulated standard-mapping pad; real pads depend on the browser exposing them.

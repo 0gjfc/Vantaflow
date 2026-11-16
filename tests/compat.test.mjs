@@ -95,6 +95,19 @@ ok(r.status === STATUS.UNKNOWN, 'unknown model is unknown');
 r = evaluate(null, platforms);
 ok(r.status === STATUS.NOT_DETECTED, 'no detection result → not detected');
 
+// ---------------------------------------------------------------- review decision: strict etaHEN rule
+// Kept after the Stage 3 review: unless an etaHEN release itself states a firmware, the result
+// is never Compatible (and never Partially compatible). Checked for every release × firmware.
+const ps5Firmware = ['2.50', '3.00', '3.20', '4.02', '4.51', '5.10', '6.50', '7.61', '8.00', '8.20', '8.40', '8.60', '9.00', '9.40', '9.60', '10.01', '10.20', '11.00'];
+for (const rel of etahen.releases) {
+  for (const fw of ps5Firmware) {
+    const res = status('ps5', 'ps5', fw, { kind: 'etahen', version: rel.version, components: { elfldr: true, kstuff: true } });
+    const st = firmwareStatement(rel, fw);
+    if (!st) ok(res.status === STATUS.UNKNOWN || res.status === STATUS.UNSUPPORTED, `etaHEN ${rel.version} on ${fw}: not stated → ${res.status}`);
+    else if (st.level === 'limited') ok(res.status !== STATUS.COMPATIBLE, `etaHEN ${rel.version} on ${fw}: limited → never compatible`);
+  }
+}
+
 // ---------------------------------------------------------------- invariant (randomised)
 // Whatever the input, "compatible" or "partial" needs every detail identified, verified and
 // documented for that exact release. 20 000 random configurations, fixed seed.

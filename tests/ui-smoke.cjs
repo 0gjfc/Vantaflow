@@ -49,6 +49,17 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     assert.equal(await head(p), 'flow:Games');
   });
 
+  await check('top navigation keeps its 11 icons; Consoles opens from the console status', async () => {
+    assert.equal(await p.$$eval('#nav .nav-btn', (els) => els.length), 11);
+    assert.equal(await p.$('#nav .nav-btn[data-id="consoles"]'), null);
+    await p.click('#console-status');
+    await wait(p);
+    assert.equal(await head(p), 'Consoles');
+    assert.equal(await p.getAttribute('.nav-btn.active', 'id'), 'console-status');
+    await p.click('.nav-btn[data-id="games"]');
+    await wait(p);
+  });
+
   await check('top-bar buttons switch sections', async () => {
     for (const id of ['store', 'files', 'power', 'games']) {
       await p.click(`.nav-btn[data-id="${id}"]`);
@@ -207,8 +218,8 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     await wait(p, 500);
     assert.match(await p.textContent('#console-status'), /PS5 · FW 8\.20/);
     assert.equal(await p.getAttribute('#gh-badge', 'data-id'), 'etahen');
-    assert.doesNotMatch(await p.textContent('#profile'), /Tester_01/); // PS5 profile has its own settings
-    assert.ok(await p.isHidden('#bg-image'));
+    assert.match(await p.textContent('#profile'), /Tester_01/); // account is shared by default
+    assert.ok(await p.isHidden('#bg-image')); // background is per console
     await p.click('#gh-badge');
     await wait(p);
     assert.equal(await head(p), 'etaHEN');
@@ -227,6 +238,20 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     assert.ok(seen.includes('etaHEN') && !seen.includes('GoldHEN'));
   });
 
+  await check('separate PS4 and PS5 profiles can be turned on', async () => {
+    await p.click('#profile');
+    await wait(p);
+    await p.click('.row:has-text("Separate PS4 and PS5 profiles")');
+    await keys(p, 'Enter');
+    assert.ok(await p.$('.row.sel .switch.on'));
+    await p.click('.row:has-text("Username")');
+    await keys(p, 'Enter');
+    await p.fill('.dialog-input', 'PS5_Player');
+    await keys(p, 'Enter');
+    await wait(p, 300);
+    assert.match(await p.textContent('#profile'), /PS5_Player/);
+  });
+
   await check('no script errors during the whole run', async () => assert.deepEqual(errors, []));
 
   await check('preferences survive a restart, per console profile', async () => {
@@ -235,13 +260,14 @@ const png = path.join(__dirname, '..', 'assets', 'etahen', 'etahen-logo.png');
     await q.goto(URL);
     await wait(q, 1200);
     assert.match(await q.textContent('#console-status'), /PS5/); // PS5 profile still active
+    assert.match(await q.textContent('#profile'), /PS5_Player/); // its own account
     assert.ok(await q.isHidden('.nav-btn[data-id="notifications"] .badge'));
     // Back to the PS4 profile: its own name, accent and background are all still there.
     await q.click('#console-status');
     await q.click('.row:has-text("Living room PS4 Pro")');
     await q.click('.row:has-text("Living room PS4 Pro")');
     await wait(q, 500);
-    assert.match(await q.textContent('#profile'), /Tester_01/);
+    assert.match(await q.textContent('#profile'), /Tester_01/); // PS4 account untouched
     assert.equal(await q.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()), ps4Accent);
     assert.ok(await q.isVisible('#bg-image'));
     // Restore default appearance: background image gone, Itemzflow Blue back.

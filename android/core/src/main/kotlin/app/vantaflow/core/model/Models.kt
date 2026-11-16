@@ -113,7 +113,7 @@ data class CompatibilityResult(
     val dataVerified: String? = null,
 )
 
-// Per-profile preferences the companion can read and edit (subset of core/settings.js).
+// Per-console preferences (subset of js/core/settings.js): always separate for PS4 and PS5.
 data class CustomizationPrefs(
     val profile: Generation,
     val accent: String = "#1d86f0",
@@ -122,6 +122,20 @@ data class CustomizationPrefs(
     val animations: Boolean = true,
     val reflections: Boolean = true,
 )
+
+// The VantaFlow account: shared by both console profiles unless separate accounts are turned on
+// (for people who use different PlayStation accounts on PS4 and PS5).
+data class AccountPrefs(val username: String = "Player One", val avatarColor: String = "#1d86f0", val presence: String = "online")
+
+data class Profiles(
+    val separateAccounts: Boolean = false,
+    val shared: AccountPrefs = AccountPrefs(),
+    val perConsole: Map<Generation, AccountPrefs> = emptyMap(),
+    val consoles: Map<Generation, CustomizationPrefs> = emptyMap(),
+) {
+    fun accountFor(g: Generation) = if (separateAccounts) perConsole[g] ?: shared else shared
+    fun prefsFor(g: Generation) = consoles[g] ?: CustomizationPrefs(g)
+}
 
 // --- small org.json helpers (org.json is built into Android) ---
 fun JSONObject.text(key: String): String? = if (has(key) && !isNull(key)) optString(key).trim().ifEmpty { null } else null

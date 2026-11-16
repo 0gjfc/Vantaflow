@@ -6,7 +6,7 @@ The Android app is a separate application from the desktop app. They share **dat
 
 | Part | State |
 |---|---|
-| `core/` — models, compatibility engine, PS4/PS5 rules, detection | **Built and tested** here (plain Kotlin on the JVM; same code runs on Android) |
+| `core/` — models (incl. shared/separate account), compatibility engine, PS4/PS5 rules, detection | **Built and tested** here (plain Kotlin on the JVM; same code runs on Android) |
 | `app/` — Android UI | **Designed below, not written.** No Android SDK is available in this environment, so no unverified UI code was added. |
 
 ```bash
@@ -39,7 +39,7 @@ android/
 | Discover | Consoles found by the active detection provider; "Add manually" | `DetectionService.list()` |
 | Console | Connection, generation, model, firmware, GoldHEN/etaHEN status, last detection | `DetectionResult` |
 | Compatibility | Status with every reason, supported / unsupported / not-verified features, requirements, limitations, data date | `CompatibilityEngine` |
-| Profile switch | PS4 or PS5 profile, each with its own preferences | `CustomizationPrefs` per `Generation` |
+| Profile switch | PS4 or PS5 profile, each with its own console preferences; one shared account unless separate accounts are on | `Profiles`, `CustomizationPrefs`, `AccountPrefs` |
 | Customization | VantaFlow preferences (accent, highlight, background, animations) for the selected profile | `CustomizationPrefs` |
 | Installation status | Read-only status of VantaFlow on a console (later stages; nothing is installed in Stage 3) | — |
 | Errors | Recent `ErrorInfo` entries, with "Copy report" | `DetectionResult.errors` |
@@ -54,7 +54,7 @@ DetectionProvider → DetectionService → DetectionResult → CompatibilityEngi
                                DataStore (per-profile prefs, selected console, last results)
 ```
 
-- **Persistence:** Jetpack DataStore, one store per profile (`ps4`, `ps5`), so profiles never mix.
+- **Persistence:** Jetpack DataStore: one store per console profile (`ps4`, `ps5`) so console preferences never mix, plus one account store that is shared unless separate accounts are on (same rule as the desktop).
 - **Threads:** detection runs in coroutines on `Dispatchers.IO`, with socket timeouts inside providers.
 - **Providers:** the mock provider first. Future providers follow `../docs/detection.md`: observe only, report evidence, and never treat an open port as proof of GoldHEN or etaHEN.
 

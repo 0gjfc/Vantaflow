@@ -21,6 +21,8 @@ These tables list what each GoldHEN and etaHEN release documents in its own rele
 
 The worst check decides the result, and every result lists a reason for each check. A final guard turns any "compatible" or "partially compatible" into "unknown" if a detail is not verified.
 
+**Review decision (Stage 3, kept):** the strict etaHEN rule stays. If an etaHEN release does not itself establish a firmware, the result is Unknown, not Compatible — even for the latest release, and even when an earlier release documented that firmware. The engine is not loosened on assumptions. `tests/compat.test.mjs` checks this for every etaHEN release against every tested firmware.
+
 ## GoldHEN (PS4)
 
 - **Last verified:** 2026-11-16

@@ -16,8 +16,8 @@ const byId = Object.fromEntries(SECTIONS.map((s) => [s.id, s]));
 const PRESENCE_DOT = { online: 'ok', away: 'away', offline: 'off' };
 const CLICKABLE = new Set(['cross', 'circle', 'square', 'triangle', 'options']);
 
-// ←/→ in the nav bar and L1/R1 visit: profile, the 11 main sections, then the homebrew
-// enabler of the active console only (GoldHEN on PS4, etaHEN on PS5).
+// ←/→ in the nav bar and L1/R1 visit: profile, the 11 main sections, the homebrew enabler of
+// the active console only (GoldHEN on PS4, etaHEN on PS5), then the console status (Consoles).
 const order = () => SECTIONS.filter((s) => !s.platform || s.platform === activeProfile()).map((s) => s.id);
 
 let current = 'games';
@@ -147,10 +147,9 @@ onChange(async (_, patch) => {
 export function initNavigation() {
   flow = new FlowView($('#view-flow'), app);
   panel = new PanelView($('#view-panel'), app);
-  $('#nav').innerHTML = SECTIONS.filter((s) => s.id !== 'profile' && !s.platform).map((s) => `<button class="nav-btn" data-id="${s.id}" title="${esc(s.label)}" aria-label="${esc(s.label)}">
+  $('#nav').innerHTML = SECTIONS.filter((s) => !s.slot && !s.platform).map((s) => `<button class="nav-btn" data-id="${s.id}" title="${esc(s.label)}" aria-label="${esc(s.label)}">
     ${icon(s.icon)}<span class="lbl">${esc(s.short || s.label)}</span>${s.id === 'notifications' ? '<span class="badge"></span>' : ''}</button>`).join('');
   document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => { goto(b.dataset.id); setFocus('content'); }));
-  $('#console-status').addEventListener('click', () => { goto('consoles'); setFocus('content'); });
   $('#prompts').addEventListener('click', (e) => { const b = e.target.closest('[data-action]'); if (b) dispatch(b.dataset.action); });
   setInterval(tickClock, 5000);
   tickClock();

@@ -6,9 +6,12 @@ import app.vantaflow.core.compat.CompatibilityEngine
 import app.vantaflow.core.compat.EnvironmentData
 import app.vantaflow.core.detection.DetectionService
 import app.vantaflow.core.detection.MockDetectionProvider
+import app.vantaflow.core.model.AccountPrefs
 import app.vantaflow.core.model.CompatStatus
+import app.vantaflow.core.model.CustomizationPrefs
 import app.vantaflow.core.model.DetectionResult
 import app.vantaflow.core.model.Generation
+import app.vantaflow.core.model.Profiles
 import app.vantaflow.core.model.objects
 import app.vantaflow.core.platform.Ps4Rules
 import app.vantaflow.core.platform.Ps5Rules
@@ -59,5 +62,17 @@ class SharedVectorsTest {
         assertEquals(CompatStatus.NOT_DETECTED, engine.evaluate(missing).status)
         val found = service.detect("ps4-goldhen-supported")
         assertTrue(found.detectedAt != null && service.last("ps4-goldhen-supported") == found)
+    }
+
+    @Test fun accountIsSharedUnlessSeparateAccountsAreOn() {
+        val shared = AccountPrefs("Kai")
+        val ps5 = AccountPrefs("PS5_Player")
+        val consoles = mapOf(Generation.PS4 to CustomizationPrefs(Generation.PS4, accent = "#e0434f"))
+        val p = Profiles(shared = shared, perConsole = mapOf(Generation.PS5 to ps5), consoles = consoles)
+        assertEquals(shared, p.accountFor(Generation.PS5))
+        assertEquals(ps5, p.copy(separateAccounts = true).accountFor(Generation.PS5))
+        assertEquals(shared, p.copy(separateAccounts = true).accountFor(Generation.PS4))
+        assertEquals("#e0434f", p.prefsFor(Generation.PS4).accent)
+        assertEquals("#1d86f0", p.prefsFor(Generation.PS5).accent)
     }
 }

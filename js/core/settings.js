@@ -66,34 +66,67 @@ export function presetOf(s) {
 
 export const PROFILES = ['ps4', 'ps5'];
 
+// The VantaFlow account (name, avatar colour, online status) is shared by the PS4 and PS5
+// profiles by default. People who use different PlayStation accounts can turn on separate
+// accounts, and each console profile then keeps its own. Everything else — appearance,
+// favourites, background image and active console — is always kept per console.
+export const ACCOUNT_KEYS = ['username', 'avatarColor', 'presence'];
+const only = (o, keys) => Object.fromEntries(Object.entries(o ?? {}).filter(([k]) => keys.includes(k)));
+const without = (o, keys) => Object.fromEntries(Object.entries(o ?? {}).filter(([k]) => !keys.includes(k)));
+
 // Stage 2 kept one settings object with a `console` field; it seeds both profiles once.
 const legacy = load('settings.v1');
 let profile = PROFILES.includes(load('profile.active')) ? load('profile.active') : (PROFILES.includes(legacy?.console) ? legacy.console : 'ps4');
-const loadProfile = (id) => sanitize(load(`settings.${id}`) ?? legacy);
+let separateAccounts = load('accounts.separate') === true;
+const accountKey = (id) => (separateAccounts ? `account.${id}` : 'account.shared');
+
+// Stage 3 stored the account inside each console profile; the active one becomes the shared account.
+if (load('account.shared') == null) save('account.shared', only(load(`settings.${profile}`) ?? legacy, ACCOUNT_KEYS));
+
+const loadProfile = (id) => sanitize({ ...(load(`settings.${id}`) ?? legacy), ...(load(accountKey(id)) ?? load('account.shared')) });
 
 export const activeProfile = () => profile;
+export const accountsSeparate = () => separateAccounts;
 export const settings = loadProfile(profile);
 const listeners = new Set();
 
 export const onChange = (fn) => listeners.add(fn);
 const emit = (patch) => listeners.forEach((fn) => fn(settings, patch));
 
+function persist() {
+  save(`settings.${profile}`, without(settings, ACCOUNT_KEYS));
+  save(accountKey(profile), only(settings, ACCOUNT_KEYS));
+}
+
 export function set(patch) {
   Object.assign(settings, sanitize({ ...settings, ...patch }));
-  save(`settings.${profile}`, settings);
+  persist();
   emit(patch);
 }
 
 // Switch to the other console profile. Listeners get `profile` in the patch.
 export function switchProfile(id) {
   if (!PROFILES.includes(id) || id === profile) return;
-  save(`settings.${profile}`, settings);
+  persist();
   profile = id;
   save('profile.active', id);
   Object.assign(settings, loadProfile(id));
   favorites.clear();
   loadFavorites().forEach((f) => favorites.add(f));
   emit({ ...settings, profile: id });
+}
+
+// Turn separate PS4/PS5 accounts on or off. What is on screen stays the same either way:
+// turning it on starts each profile from the current account (unless it already has one);
+// turning it off makes the current account the shared one.
+export function setAccountsSeparate(on) {
+  if (on === separateAccounts) return;
+  const current = only(settings, ACCOUNT_KEYS);
+  separateAccounts = on;
+  save('accounts.separate', on);
+  if (on) PROFILES.forEach((id) => { if (load(`account.${id}`) == null) save(`account.${id}`, current); });
+  else save('account.shared', current);
+  emit({ accountsSeparate: on });
 }
 
 export const resetAll = () => { setBgImage(null); set({ ...DEFAULTS }); };

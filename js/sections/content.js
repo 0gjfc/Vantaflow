@@ -4,7 +4,7 @@
 import { store, trophyNames, friends, notifications, media, buildFileTree, resolvePath, powerOptions, profile } from '../data/mock.js';
 import { titles } from '../data/library.js';
 import { platform, platformOf, activeDetection } from '../platform/index.js';
-import { settings, set, SWATCHES, USERNAME } from '../core/settings.js';
+import { settings, set, SWATCHES, USERNAME, accountsSeparate, setAccountsSeparate } from '../core/settings.js';
 import { load, save } from '../core/store.js';
 import { coverArt } from '../ui/art.js';
 import { mod } from '../ui/carousel.js';
@@ -18,11 +18,13 @@ const PRESENCE = { online: ['ok', 'Online'], away: ['away', 'Away'], offline: ['
 const trophyTotals = () => titles('games').reduce((n, g) => n + g.trophies[0], 0);
 
 export const profileSection = {
-  id: 'profile', get label() { return settings.username; }, icon: 'user', view: 'panel', kind: 'live',
+  id: 'profile', get label() { return settings.username; }, icon: 'user', view: 'panel', kind: 'live', slot: 'profile', // the avatar, not an icon
   items: () => [
     { id: 'name', title: 'Username', icon: 'user', value: settings.username },
     { id: 'avatar', title: 'Avatar color', icon: 'image', valueHTML: `<span class="chip" style="background:${settings.avatarColor}"></span>` },
     { id: 'presence', title: 'Online status', icon: 'friends', valueHTML: `<span class="dot ${PRESENCE[settings.presence][0]}"></span><span class="val">${PRESENCE[settings.presence][1]}</span>` },
+    { id: 'separate', title: 'Separate PS4 and PS5 profiles', sub: accountsSeparate() ? `This profile belongs to the ${platform().name}` : 'Shared by both consoles', icon: 'console',
+      valueHTML: `<span class="switch${accountsSeparate() ? ' on' : ''}"><i></i></span>` },
     { group: 'Activity' },
     { id: 'trophies', title: 'Trophies', sub: `${trophyTotals()} earned on this console`, icon: 'trophy', value: '›' },
     { id: 'friends', title: 'Friends', sub: `${friends.filter((f) => f.status === 'online').length} online of ${friends.length}`, icon: 'friends', value: '›' },
@@ -35,18 +37,20 @@ export const profileSection = {
       name: '✕ edits the name shown in the top bar. 1–16 letters, numbers, spaces, _ . or -.',
       avatar: '←/→ or ✕ changes the avatar colour.',
       presence: '←/→ or ✕ changes the dot on your avatar.',
+      separate: 'Off (default): name, avatar colour and online status are the same on PS4 and PS5. Turn it on if you use different PlayStation accounts; each console profile then keeps its own. Appearance, favourites, backgrounds and the active console are always kept per console.',
       trophies: '✕ opens Trophies.',
       friends: '✕ opens Friends.',
       signout: 'Simulated: there is no real account to sign out of.',
     };
     return `<div class="person"><div class="avatar xl">${esc(settings.username[0])}<i class="dot ${PRESENCE[settings.presence][0]}"></i></div>
       <div><h2>${esc(settings.username)}</h2><div class="status-line">Level ${profile.level} · ${esc(PRESENCE[settings.presence][1])}</div></div></div>
-      ${kv([['Console', `${model?.name ?? 'Not identified'} (simulated)`], ['Firmware', `${d?.firmware.version ?? 'unknown'} (simulated)`], ['Profile', platform().name], ['Trophies', String(trophyTotals())], ['Saved', 'Name, colour and status are stored per console profile']])}
+      ${kv([['Console', `${model?.name ?? 'Not identified'} (simulated)`], ['Firmware', `${d?.firmware.version ?? 'unknown'} (simulated)`], ['Profile', platform().name], ['Trophies', String(trophyTotals())], ['Account', accountsSeparate() ? `Separate — this is the ${platform().name} profile` : 'Shared by PS4 and PS5']])}
       <p class="note">${esc(notes[it.id])}</p>`;
   },
   adjust(it, dir) {
     if (it.id === 'avatar') { const i = SWATCHES.indexOf(settings.avatarColor); set({ avatarColor: SWATCHES[mod((i < 0 ? 0 : i) + dir, SWATCHES.length)] }); return true; }
     if (it.id === 'presence') { const o = Object.keys(PRESENCE); set({ presence: o[mod(o.indexOf(settings.presence) + dir, o.length)] }); return true; }
+    if (it.id === 'separate') { setAccountsSeparate(!accountsSeparate()); return true; }
     return false;
   },
   async activate(it, panel) {

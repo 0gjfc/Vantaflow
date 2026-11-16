@@ -1,5 +1,7 @@
-// Section registry. The order here is the order of the top bar and of L1 / R1.
+// Section registry. The order here is the order of the top bar and of L1 / R1: profile (avatar),
+// the 11 icons, the homebrew badge, then the console status (Consoles page).
 // Sections with `platform` (GoldHEN, etaHEN) only appear while that console is selected.
+// Sections with `slot` are opened from the avatar or the console status, not from an icon.
 import { settings, favorites } from '../core/settings.js';
 import { titles, sortItems } from '../data/library.js';
 import { profileSection, storeSection, trophySection, friendsSection, notificationsSection, mediaSection, filesSection, powerSection } from './content.js';
@@ -21,7 +23,6 @@ export const SECTIONS = [
   flow('apps', 'Applications', 'Apps', 'apps', 'square', 'apps'),
   storeSection,
   settingsSection,
-  consolesSection,
   trophySection,
   friendsSection,
   notificationsSection,
@@ -31,4 +32,5 @@ export const SECTIONS = [
   powerSection,
   goldhenSection,
   etahenSection,
+  consolesSection,
 ];

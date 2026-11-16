@@ -55,7 +55,7 @@ function detail(it) {
 }
 
 export const consolesSection = {
-  id: 'consoles', label: 'Consoles', icon: 'console', view: 'panel', kind: 'sim',
+  id: 'consoles', label: 'Consoles', icon: 'console', view: 'panel', kind: 'sim', slot: 'status', // opened from the console status, not an icon
   items: () => GROUPS.flatMap(([gen, title]) => {
     const refs = consoleRefs().filter((r) => (detectionOf(r.id)?.console.generation ?? null) === gen);
     return refs.length ? [{ group: title }, ...refs.map((ref) => ({
