@@ -52,6 +52,8 @@ class Ps5Rules(private val etahen: EnvironmentData) : PlatformRules {
             env.kind == EnvironmentKind.GOLDHEN -> add(CompatStatus.UNSUPPORTED, "environment-mismatch", "GoldHEN is a PS4 environment; it cannot run on a PS5.")
             env.state == EnvironmentState.ABSENT -> add(CompatStatus.UNSUPPORTED, "environment-absent",
                 "etaHEN is not running. VantaFlow's console features need etaHEN on a PS5." + if (fwKnown) " $mentionedText" else "")
+            env.state == EnvironmentState.UNSUPPORTED_METHOD -> add(CompatStatus.UNKNOWN, "environment-check-unsupported",
+                "etaHEN status cannot be checked: ${env.evidence ?: "no documented read-only method exists."}")
             env.state == EnvironmentState.UNKNOWN -> add(CompatStatus.UNKNOWN, "environment-unknown", "Whether etaHEN is running could not be determined.")
             env.kind != EnvironmentKind.ETAHEN -> add(CompatStatus.UNKNOWN, "environment-unidentified", "A homebrew environment is running, but it was not identified as etaHEN.")
             !env.verified -> add(CompatStatus.UNKNOWN, "environment-unverified", "etaHEN is not verified: ${env.evidence ?: "source ${env.source}"}")

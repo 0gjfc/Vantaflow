@@ -1,23 +1,27 @@
-# VantaFlow — Stage 3: PS4 & PS5 platform architecture
+# VantaFlow — Stage 4: real console connectivity (read-only)
 
 VantaFlow is an Itemzflow-inspired PlayStation dashboard. Itemzflow's horizontal coverflow is the centrepiece, and a subtle top navigation bar adds the other PlayStation sections.
 
-**Stage 3 status:** PS4 and PS5 are separate platform modules with their own models, homebrew environment (GoldHEN / etaHEN), customization capabilities and compatibility rules. A compatibility engine rates a console from researched, dated release data, a detection architecture runs with a mock provider, a **Consoles** page (opened from the console status in the top bar) manages consoles, PS4 and PS5 profiles keep separate console settings while the VantaFlow account is shared by default, and an Android companion core shares the same data and rules. Everything that would need a console is still **demonstration data**, clearly labelled. Nothing talks to a console, installs packages, runs payloads or touches system files.
+**Stage 4 status:** VantaFlow can find and identify the user's own PS4 and PS5 on the local network, read-only, through the PlayStation Device Discovery Protocol (DDP), with separate PS4 and PS5 providers on the desktop and in the Android companion core. It verifies the console type, name and power state, and on a PS4 the firmware (confirmed below 10.00). It cannot read the model, the PS5 firmware number or GoldHEN / etaHEN status: no documented read-only method exists, so these are shown as **not available** and **Unsupported detection method**, and a real console is rated **Unknown**, never Compatible. All of this is tested against fake consoles, **not yet on physical hardware** (see the list in [docs/connectivity.md](docs/connectivity.md#6-features-that-still-need-physical-console-testing)). The Android companion screens are written but **not compiled** (no Android SDK in the development environment). The demonstration consoles stay, clearly labelled.
 
-Stage 3 documents: [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
+**Stage 3 (unchanged):** PS4 and PS5 are separate platform modules with their own models, homebrew environment (GoldHEN / etaHEN), customization capabilities and compatibility rules. A compatibility engine rates a console from researched, dated release data, a detection architecture runs with a mock provider, a **Consoles** page (opened from the console status in the top bar) manages consoles, PS4 and PS5 profiles keep separate console settings while the VantaFlow account is shared by default, and an Android companion core shares the same data and rules. Everything that would need a console is still **demonstration data**, clearly labelled. Nothing talks to a console, installs packages, runs payloads or touches system files.
+
+Documents: [**connectivity (Stage 4)**](docs/connectivity.md) · [compatibility](docs/compatibility.md) · [customization research](docs/customization.md) · [detection](docs/detection.md) · [data models](docs/data-models.md) · [safety and recovery](docs/safety-and-recovery.md) · [Android companion](android/README.md)
 
 ---
 
 ## 1. Run it
 
-Requirements: a modern browser (Chrome, Edge, Firefox, Safari) and anything that serves static files. No install step, no build step, no runtime dependencies.
+Requirements: a modern browser (Chrome, Edge, Firefox, Safari) and Node.js 18 or later. No install step, no build step, no runtime dependencies.
 
 ```bash
 cd Vantaflow
-python3 -m http.server 8080        # or: npx serve .   /   php -S localhost:8080
+node desktop/server.mjs            # app + local detection agent on http://127.0.0.1:8080
 ```
 
-Open <http://localhost:8080>. Press **F11** for full screen.
+Open <http://127.0.0.1:8080>. Press **F11** for full screen. `VANTAFLOW_PORT=9000 node desktop/server.mjs` uses another port.
+
+The agent is needed only for your own consoles (browsers cannot send UDP). Any static server (`python3 -m http.server 8080`) still runs everything else with the demonstration consoles; the browser then logs one "404" for `/api/agent`, and the real-console actions explain that they need the agent.
 
 > Opening `index.html` straight from disk (`file://`) does not work: browsers block ES modules there. Use a local server.
 
@@ -28,8 +32,11 @@ node tests/logic.test.mjs                              # settings validation, PS
 node tests/compat.test.mjs                             # compatibility engine, researched data, detection (Node 18+)
 node tests/profiles.test.mjs                           # console profiles and the shared account (Node 18+)
 
-python3 -m http.server 8080 &                          # end-to-end in a real browser (needs Playwright installed)
-node tests/ui-smoke.cjs http://localhost:8080/
+node tests/connectivity.test.mjs                       # Stage 4: DDP, providers, discovery, agent API (fake consoles)
+
+node desktop/server.mjs &                              # end-to-end in a real browser (needs Playwright installed)
+node tests/ui-smoke.cjs http://127.0.0.1:8080/
+node tests/ui-consoles.cjs                             # Stage 4 Consoles page with fake consoles (starts its own agent)
 
 cd android && gradle :core:test                        # Android core: same vectors, Kotlin engine (JDK 17+)
 node tools/build-docs.mjs                              # regenerate docs/compatibility.md and docs/customization.md
@@ -38,7 +45,11 @@ node tools/build-docs.mjs                              # regenerate docs/compati
 - `tests/compat.test.mjs` (494 checks): integrity of the researched data, every mock console gets its expected status with reasons, targeted rules (e.g. etaHEN 2.4B on 8.20 is Unknown because 2.4B does not restate 8.20), the strict etaHEN rule for every release × firmware, the detection service (timeouts and errors become Not detected), design tokens vs CSS, and **20 000 random configurations** proving that nothing unverified or undocumented is ever rated Compatible.
 - `tests/profiles.test.mjs`: shared account by default, separate PS4/PS5 accounts when turned on, console settings always separate, restart, upgrade from Stage 3.
 - `tests/ui-smoke.cjs` (22 checks): every section, the 11-icon top bar with Consoles opened from the console status, carousel, selection and simulated launch, accent colour, animation speed, background preview → apply, profile editing, notifications, File Manager, storage, a simulated gamepad, the Consoles page (all 11 consoles and their statuses, detect again, unknown device refused), switching to a PS5 console (etaHEN, PS5 library, shared account, separate console settings), turning on separate PS4/PS5 profiles, preferences after a restart per profile, logo text fallback, window sizes. Playwright is only for this test.
-- `android/core` (4 test groups): the Kotlin engine gives the same status as the desktop for every mock console; the account model is shared unless separate accounts are on.
+- `tests/connectivity.test.mjs` (105 checks): every shared DDP sample, address validation, PS4 and PS5 providers against fake consoles (identification, unconfirmed 11.00, missing firmware, wrong type, unknown type, non-DDP reply, timeout, network error), discovery (one request per generation, loopback filtering), the agent API (header, Host check, consent, invalid address, probe) and engine integration (a real PS4 / PS5 is Unknown, never Compatible).
+- `tests/ui-consoles.cjs` (14 checks): no traffic before consent, the consent text, discovery results, real-console detail (verified vs not available, HEN status never guessed), making a real console active (top bar, GoldHEN page), disconnect (no traffic), connect and refresh, invalid and internet addresses refused, an address that does not answer stays "not identified", remove, restart re-check, and behaviour without the agent.
+- `android/core` (14 tests): the Kotlin engine gives the same status as the desktop for every mock console; the account model is shared unless separate accounts are on; Stage 4 `ConnectivityTest` repeats the DDP samples, address rules, PS4/PS5 providers, timeouts, network errors, discovery, saved consoles (connect, disconnect without traffic, remove) and engine integration.
+
+**Fake consoles are not physical proof.** Every test that uses one says so in its output.
 
 ### Manual checklist
 
@@ -46,10 +57,11 @@ node tools/build-docs.mjs                              # regenerate docs/compati
 2. **L1 / R1 (Q / E)** visit every section. **↑** moves focus to the top bar; there **← →** switches section and **↓** returns.
 3. **Settings → Appearance:** choose an image, check the preview, apply it; change accent / highlight; **Restore default appearance**.
 4. **Settings → Interface:** turn animations, reflections, sounds and music on/off; change animation speed. Reload the page: everything stays.
-5. **Consoles** (click the console status top-right, or L1/R1 past the homebrew badge): pick **Living room PS5**. The badge becomes etaHEN, the status shows PS5 · FW 8.20, Games shows PS5 titles (white PS5 case band) plus PS4 titles, and storage, files and console settings change to the PS5 profile; your name and avatar stay the same. Pick a PS4 console to return; its settings are untouched. △ re-runs detection.
-6. **Profile** (top-left): ✕ on Username to rename; ← → on Avatar colour and Online status. **Separate PS4 and PS5 profiles** (off by default) gives each console its own name, avatar and status, for people with different PlayStation accounts.
-7. Click the **storage** figures (bottom-left) for the storage breakdown, or the **console status** (top-right) for the Consoles page.
-8. Resize the window: the 1920×1080 stage scales and letterboxes.
+5. **Your consoles** (Stage 4, with `node desktop/server.mjs`): open Consoles, choose **Discover consoles on this network…**, read the explanation, choose **Search**, then pick your console. Or choose **Add console by IP address…** (PS4/PS5: *Settings → Network → View Connection Status*). ✕ on a console opens **Connect / Disconnect, Refresh information, Make active console, Remove saved console**; △ refreshes.
+6. **Demo consoles** (click the console status top-right, or L1/R1 past the homebrew badge): pick **Living room PS5**. The badge becomes etaHEN, the status shows PS5 · FW 8.20, Games shows PS5 titles (white PS5 case band) plus PS4 titles, and storage, files and console settings change to the PS5 profile; your name and avatar stay the same. Pick a PS4 console to return; its settings are untouched. △ re-runs detection.
+7. **Profile** (top-left): ✕ on Username to rename; ← → on Avatar colour and Online status. **Separate PS4 and PS5 profiles** (off by default) gives each console its own name, avatar and status, for people with different PlayStation accounts.
+8. Click the **storage** figures (bottom-left) for the storage breakdown, or the **console status** (top-right) for the Consoles page.
+9. Resize the window: the 1920×1080 stage scales and letterboxes.
 
 ## 3. Controls
 
@@ -67,7 +79,7 @@ node tools/build-docs.mjs                              # regenerate docs/compati
 
 ## 4. What is functional and what is demonstration data
 
-Simulated screens carry a yellow **SIMULATED** tag, simulated actions show a yellow "Simulated" message, and demo figures say **MOCK**. Working features carry a green **LIVE** tag.
+Simulated screens carry a yellow **SIMULATED** tag, simulated actions show a yellow "Simulated" message, and demo figures say **MOCK**. Working features carry a green **LIVE** tag. Information read from your own console carries a green **READ-ONLY** tag.
 
 | Functional (really works) | Demonstration data / simulated |
 |---|---|
@@ -80,8 +92,9 @@ Simulated screens carry a yellow **SIMULATED** tag, simulated actions show a yel
 | Animation on/off and speed, sounds, generated background music | Console model, firmware, storage figures |
 | Profile: username, avatar colour, online status — shared by PS4 and PS5, or separate when turned on (saved) | GoldHEN and etaHEN status, plugins and tools |
 | Favourites and notification read state (saved) | |
-| PS4 / PS5 profiles with separate settings, storage maths, clock, "Reload VantaFlow" | Every console on the Consoles page (mock detection provider) |
-| Compatibility engine and its reasons (real logic over researched data) | Detection results it is applied to |
+| PS4 / PS5 profiles with separate settings, storage maths, clock, "Reload VantaFlow" | The demonstration consoles on the Consoles page (mock provider) |
+| Compatibility engine and its reasons (real logic over researched data) | Detection results of the demonstration consoles |
+| **Stage 4:** discovery and add by IP, connect / disconnect / refresh / remove / make active, console type, name, power, PS4 firmware (read-only, needs `node desktop/server.mjs`; not yet tested on a physical console) | |
 
 ## 5. PS4 and PS5 (Stage 3)
 
@@ -100,7 +113,9 @@ Simulated screens carry a yellow **SIMULATED** tag, simulated actions show a yel
 
 **Compatibility states:** Compatible · Partially compatible · Unsupported · Unknown · Not detected. Each check (connection, generation, model, firmware, environment, release, required parts) adds a reason, the worst one wins, and a final guard turns any unverified configuration into Unknown. Full rules and per-release data: [docs/compatibility.md](docs/compatibility.md).
 
-**Consoles page** (opened from the console status indicator, top right; the top bar keeps its 11 icons): connection, network, generation, model, firmware (with evidence), homebrew status, compatibility with every reason, supported / not supported / not verified features, requirements, limitations, customization summary and last detection time. ✕ makes a console active (switching to its PS4 or PS5 profile), △ detects again. A device not identified as PS4 or PS5 cannot be made active.
+**Consoles page, Stage 4:** see [docs/connectivity.md](docs/connectivity.md) for the real-console part.
+
+**Consoles page, demonstration consoles** (opened from the console status indicator, top right; the top bar keeps its 11 icons): connection, network, generation, model, firmware (with evidence), homebrew status, compatibility with every reason, supported / not supported / not verified features, requirements, limitations, customization summary and last detection time. ✕ makes a console active (switching to its PS4 or PS5 profile), △ detects again. A device not identified as PS4 or PS5 cannot be made active.
 
 **Mock consoles** (`shared/mock-consoles.json`): PS4 supported GoldHEN · PS4 unsupported firmware · PS4 without GoldHEN · PS4 with only an open port · PS5 supported etaHEN · PS5 partial (untested toolbox support) · PS5 unsupported firmware · PS5 without etaHEN · PS5 with an unresearched etaHEN version · unknown console · disconnected console.
 
@@ -120,6 +135,8 @@ js/
   detection/               Console detection
     service.js             Runs a provider: timeout, errors, timestamps
     mock-provider.js       Demonstration consoles from shared/mock-consoles.json
+    lan-provider.js        Your consoles on the local network (saved list, read-only checks)
+    agent-client.js        Calls the local agent; the UI's only path to the network
   core/                    App plumbing
     store.js               Local persistence (namespaced JSON in localStorage)
     settings.js            Preferences: defaults, validation, change events, favourites
@@ -149,23 +166,32 @@ js/
     background.js          Animated shader / plain / image background
     art.js                 Generated placeholder covers and icons
     ui.js                  Icons, glyphs, tags, widgets, toasts, sounds, music, dialogs
+desktop/                   Local agent (Node, no dependencies), Stage 4
+  server.mjs               Serves the app and /api/agent, /api/discover, /api/probe on 127.0.0.1
+  agent/ddp.mjs            PlayStation Device Discovery Protocol: format only
+  agent/udp.mjs            The only UDP code on the desktop
+  agent/discovery.mjs      Discovery and local-address rules
+  agent/report.mjs         Provider report shape
+  agent/providers/ps4.mjs  PS4 provider (UDP 987)       — separate on purpose
+  agent/providers/ps5.mjs  PS5 provider (UDP 9302)      — separate on purpose
 shared/                    Language-neutral data used by desktop and Android
   compatibility/           Researched GoldHEN and etaHEN release data (dated, with sources)
   mock-consoles.json       Demonstration consoles + expected results (shared test vectors)
   customization.json       Customization research
   design-tokens.json       Colours and timing shared with Android
-android/                   Android companion: core module (Kotlin) + architecture
+  ddp-samples.json         DDP reply samples (constructed from the documented format) — shared test vectors
+android/                   Android companion: core module (Kotlin, tested) + Compose app (written, not compiled)
 docs/                      Compatibility, customization, detection, data models, safety
 tools/build-docs.mjs       Generates docs/compatibility.md and docs/customization.md
 assets/goldhen/            Official GoldHEN logo
 assets/etahen/             Official etaHEN logo
-tests/                     logic.test.mjs, compat.test.mjs (Node), ui-smoke.cjs (Playwright, optional)
+tests/                     logic, compat, profiles, connectivity (Node); ui-smoke.cjs, ui-consoles.cjs (Playwright, optional); fake-console.mjs
 ```
 
 ### Replacing mock data later
 
 - **Titles:** `js/data/library.js` is the only place titles come from. Replace `source.load(platformId)` with a loader that reads the console and resolves to `{ games, apps, homebrew }`, each a list of `{ id, title, kind, platform, version, type, size, desc, … }`. The carousel, trophies, storage and file manager follow automatically.
-- **Console info:** write a detection provider (see [docs/detection.md](docs/detection.md)) and pass it to `DetectionService` in `js/platform/index.js` instead of the mock provider. Everything else reads `DetectionResult`.
+- **Console info:** real consoles go through `js/detection/lan-provider.js` and the agent's PS4 / PS5 providers. A new read-only method becomes a new provider (see [docs/detection.md](docs/detection.md)); everything else reads `DetectionResult`.
 - **Release data:** add new GoldHEN / etaHEN releases to `shared/compatibility/*.json` with evidence and date, then run `node tools/build-docs.mjs` and the tests.
 - **Covers:** add `cover: 'assets/covers/<TitleID>.png'` to a title (see `assets/README.md`).
 
@@ -208,9 +234,9 @@ VantaFlow additions: the top navigation bar, profile, clock, console status, sto
 
 Plain HTML, CSS and JavaScript ES modules, with no framework, build tools or runtime packages. CSS 3D reproduces Itemzflow's coverflow geometry directly, the state is small enough not to need React or Vue, and the data shapes and layout numbers port one-to-one to a native renderer later. Only the animated background uses WebGL, and it falls back to the plain background.
 
-## 10. Boundaries kept in Stage 3
+## 10. Boundaries kept (Stage 4)
 
-No jailbreak exploits, firmware exploitation, payload execution, authentication or DRM bypass, unauthorised console access, firmware or protected-file changes, PKG or APK installation, Y2JB, automatic updates or downgrades, console communication or real power control. Detection is mock-only and all console information is simulated. Rules for any future console operation (compatibility gate, explicit authorisation, dry run, backup, undo) are in [docs/safety-and-recovery.md](docs/safety-and-recovery.md).
+No jailbreak exploits, firmware exploitation, payload execution, authentication or DRM bypass, unauthorised console access, firmware or protected-file changes, PKG or APK installation, Y2JB, automatic updates or downgrades, automatic console modification or real power control. Console communication is limited to the read-only DDP `SRCH` request, on the local network only, to consoles the user chose, after the user agreed. WAKEUP / LAUNCH, Remote Play registration, and probing homebrew ports are not implemented. No credentials are needed or stored; nothing is sent outside the local network. Rules for any future console operation (compatibility gate, explicit authorisation, dry run, backup, undo) are in [docs/safety-and-recovery.md](docs/safety-and-recovery.md).
 
 ## 11. Stage 3 review decisions
 
@@ -224,12 +250,18 @@ No jailbreak exploits, firmware exploitation, payload execution, authentication 
 |---|---|
 | **Researched (primary sources, verified 2026-11-16)** | GoldHEN: per-release firmware from payload files in tagged commits (v1.0–v2.3) and release-note firmware lists (v2.4b17–v2.4b18), features and dates from the changelog and README. etaHEN: per-release firmware statements, requirements and known issues from release notes, features and config from the README, dates from git tags. |
 | **Researched (secondary sources)** | PS5 official home-screen customization (retro looks, animated themes, no custom wallpaper); PS5 disc-drive model groups. Marked as secondary in [docs/customization.md](docs/customization.md). |
-| **Simulated** | Every console, detection result, firmware value and homebrew status; GoldHEN / etaHEN plugins and tools; all console actions. |
-| **Unverified** | GoldHEN betas 2.4b5–2.4b16.2 (not published as releases); etaHEN releases without firmware statements (never rated compatible); release asset file names; PS4 profile customization; anything about real detection, which needs a provider that does not exist yet. |
+| **Implemented and tested with fake consoles (Stage 4)** | DDP parsing, PS4 / PS5 identification, PS4 firmware decoding, discovery, manual IP, connect / disconnect / refresh / remove / make active, errors and timeouts, engine integration — desktop and Android core. |
+| **Implemented, not tested on physical hardware** | Everything that talks to a real console. Physical-test list: [docs/connectivity.md](docs/connectivity.md#6-features-that-still-need-physical-console-testing). |
+| **Implemented, not compiled** | Android companion screens (`android/app`). |
+| **Unsupported (no documented read-only method)** | Console model, PS5 firmware number, GoldHEN / etaHEN status and version, storage. |
+| **Simulated** | The demonstration consoles and their detection results; GoldHEN / etaHEN plugins and tools; launching, power and other console actions. |
+| **Unverified / unknown** | GoldHEN betas 2.4b5–2.4b16.2 (not published as releases); etaHEN releases without firmware statements (never rated compatible); release asset file names; PS4 profile customization; PS4 system-version layout from 10.00; PS5 system-version mapping. |
 
 ## 13. Known limits
 
 - On a real console, text entry (username) would use the system keyboard; the browser shows a text field.
 - The gamepad was tested with a simulated standard-mapping pad; real pads depend on the browser exposing them.
 - Background music is a generated tone loop; reading MP3s from USB needs console access.
-- The Android UI module is designed but not written; only `android/core` exists and is tested.
+- The Android companion screens are written but have never been compiled or run: the development environment has no Android SDK. `android/core`, which holds their logic, is compiled and tested.
+- Real-console detection has not been run against a physical PS4 or PS5.
+- Discovery uses broadcast; networks with client isolation (often guest Wi-Fi) block it. Add the console by IP address there.

@@ -3,8 +3,10 @@ plugins { kotlin("jvm") version "2.0.21" }
 repositories { mavenCentral() }
 
 dependencies {
-    // org.json is built into Android; on the JVM it comes from Maven Central.
-    implementation("org.json:json:20240303")
+    // org.json is built into Android, so the app must not bundle a second copy: compile against
+    // it here and add it only for the JVM tests.
+    compileOnly("org.json:json:20240303")
+    testImplementation("org.json:json:20240303")
     testImplementation(kotlin("test"))
 }
 
