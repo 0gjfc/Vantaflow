@@ -41,13 +41,8 @@ $('.profile').innerHTML = `<div class="avatar">${esc(profile.name[0])}</div><div
 $('#nav').innerHTML = SECTIONS.filter((s) => s.id !== 'goldhen').map((s) => `<button class="nav-btn" data-id="${s.id}" title="${esc(s.label)}" aria-label="${esc(s.label)}">
   ${icon(s.icon)}<span class="lbl">${esc(s.short || s.label)}</span>${s.id === 'notifications' ? '<span class="badge"></span>' : ''}</button>`).join('');
 $('#console-status').innerHTML = `<span class="dot ok"></span>${esc(consoleStatus.model)} · FW ${esc(consoleStatus.firmware)} <span class="mock">MOCK</span>`;
-$('#gh-badge').innerHTML = `<img class="gh-mini-img" src="${GH_LOGO}" alt="GoldHEN"><span class="gh-mini-txt">GoldHEN</span><span class="dot ok"></span>`;
+$('#gh-badge').innerHTML = `<img class="gh-mini-img" src="${GH_LOGO}" alt="GoldHEN"><span class="dot ok"></span>`;
 document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => { goto(b.dataset.id); setFocus('content'); }));
-
-// Show the official logo only if the user has dropped it in.
-const logo = new Image();
-logo.onload = () => document.documentElement.classList.add('has-gh-logo');
-logo.src = GH_LOGO;
 
 function refreshChrome() {
   const unread = notifications.filter((n) => !n.read).length;

@@ -18,4 +18,4 @@ For an application or homebrew icon, use a square image (512 × 512) and an `ico
 
 ## GoldHEN logo — `assets/goldhen/goldhen-logo.png`
 
-Put the official GoldHEN logo (PNG with transparency) at exactly this path. It is detected on load and used in the GoldHEN panel and the top-bar badge. VantaFlow does not redraw or restyle the logo.
+The official GoldHEN logo, used in the GoldHEN panel and the top-bar badge. It came as a JPEG on white; the white was converted to transparency (colour-to-alpha, so the soft shadow keeps its edge) and the empty margin trimmed. The artwork itself is unchanged. To replace it, overwrite this file with another transparent PNG.

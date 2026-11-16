@@ -322,8 +322,7 @@ const powerSection = {
 };
 
 // -------------------------------------------------------------- GoldHEN ---
-const ghLogo = () => `<div class="gh-logo"><img class="gh-logo-img" src="${GH_LOGO}" alt="GoldHEN logo">
-  <div class="gh-logo-ph">GoldHEN<small>Official logo not bundled — add ${GH_LOGO}</small></div></div>`;
+const ghLogo = () => `<img class="gh-logo-img" src="${GH_LOGO}" alt="GoldHEN logo">`;
 const goldhenSection = {
   id: 'goldhen', label: 'GoldHEN', icon: 'flask', view: 'panel', kind: 'sim',
   items: () => [
@@ -347,7 +346,7 @@ const goldhenSection = {
     if (it.plugin) return `${hero}<h2>${esc(it.plugin.name)}</h2><p>${esc(it.plugin.desc)}</p>${kv([['State', it.plugin.enabled ? 'Enabled' : 'Disabled'], ['File', `/data/GoldHEN/plugins/${it.plugin.name}.prx`]])}<p class="note">←/→ or ✕ toggles the mock state.</p>`;
     if (it.id === 'about') {
       return `${hero}<h2>About GoldHEN</h2><p>GoldHEN is a PS4 homebrew enabler by SiSTRo. VantaFlow shows a mock status panel only; real GoldHEN integration is researched separately in a later stage.</p>
-        <p class="note">Logo: VantaFlow does not draw its own version of the GoldHEN logo. Put the official image at <code>${GH_LOGO}</code> and it appears here and in the top bar.</p>`;
+        <p class="note">Logo: official GoldHEN logo, shown unaltered (white background made transparent).</p>`;
     }
     return `${hero}<h2>${esc(it.title)}</h2><p>${esc(it.sub)}.</p>${cta('Open')}`;
   },

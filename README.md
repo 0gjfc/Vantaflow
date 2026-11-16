@@ -110,7 +110,8 @@ js/
   art.js              Procedural placeholder cover art and app icons (SVG)
   data.js             All mock data (games, apps, homebrew, store, friends, files, GoldHEN status…)
 tests/logic.test.mjs  Node self-check for the DOM-free logic
-assets/README.md      Where to drop real cover art and the GoldHEN logo
+assets/goldhen/       Official GoldHEN logo (goldhen-logo.png)
+assets/README.md      Where to drop real cover art; how the logo was prepared
 ```
 
 ### Reusable components
@@ -177,7 +178,7 @@ Every simulated screen carries a yellow **SIMULATED** tag, and every simulated a
 
 The GoldHEN panel (top-bar badge, or L1/R1 to the last section) shows a mock status indicator, version, uptime, plugins, tools and the GoldHEN feature list.
 
-**About the logo:** the official GoldHEN logo is not in GoldHEN's public GitHub repositories, so it is not bundled here. VantaFlow does not draw its own version of it either. Put the official image at `assets/goldhen/goldhen-logo.png` and it appears in the panel and the top-bar badge automatically. Until then a plain text placeholder is shown. The browser console shows one expected 404 for this file until you add it.
+**About the logo:** `assets/goldhen/goldhen-logo.png` is the official GoldHEN logo supplied by the project owner. It is used unaltered except that its white background was made transparent and the empty margin trimmed. It appears in the GoldHEN panel and the top-bar badge.
 
 ---
 
