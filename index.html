@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VantaFlow — Stage 1 prototype</title>
+  <link rel="stylesheet" href="css/vantaflow.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="bg-shader" aria-hidden="true"></canvas>
+    <div id="bg-image" hidden></div>
+    <div id="bg-dim"></div>
+
+    <header id="topbar">
+      <div class="profile"></div>
+      <nav id="nav" aria-label="Sections"></nav>
+      <div class="status">
+        <button id="gh-badge" class="nav-btn gh-badge" data-id="goldhen" title="GoldHEN (mock status)" aria-label="GoldHEN"></button>
+        <span id="console-status"></span>
+        <span id="clock"></span>
+      </div>
+    </header>
+
+    <main>
+      <section id="view-flow" class="view" hidden></section>
+      <section id="view-panel" class="view" hidden></section>
+    </main>
+
+    <footer id="prompts"></footer>
+    <div id="toasts" aria-live="polite"></div>
+    <div id="dialog" role="dialog" hidden></div>
+    <div id="splash" hidden></div>
+  </div>
+  <noscript>VantaFlow needs JavaScript.</noscript>
+</body>
+</html>
