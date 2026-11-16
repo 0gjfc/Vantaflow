@@ -8,6 +8,7 @@ import { profileSection, storeSection, trophySection, friendsSection, notificati
 import { settingsSection } from './settings.js';
 import { goldhenSection, etahenSection } from './hen.js';
 import { consolesSection } from './consoles.js';
+import { setupSection } from './setup.js';
 
 const withFav = (it) => ({ ...it, fav: favorites.has(it.id) });
 
@@ -33,4 +34,5 @@ export const SECTIONS = [
   goldhenSection,
   etahenSection,
   consolesSection,
+  setupSection, // opened from Settings → System (slot 'settings'): no icon, not in L1 / R1
 ];

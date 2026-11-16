@@ -1,9 +1,12 @@
 // Settings section: appearance, interface, storage, console and system rows.
 // Every row except Storage changes the interface immediately and is saved locally.
 import { settings, set, CHOICES, PRESETS, SWATCHES, DEFAULTS, presetOf, getBgImage, setBgImage, resetAll, activeProfile, switchProfile, PROFILES } from '../core/settings.js';
-import { storageInfo } from '../platform/index.js';
+import { storageInfo, agentAvailable } from '../platform/index.js';
 import { mod } from '../ui/carousel.js';
-import { esc, tag, bar, kv, toast, blip, confirmDialog } from '../ui/ui.js';
+import { esc, tag, bar, kv, toast, blip, confirmSheet } from '../ui/ui.js';
+import { snapshot } from '../core/store.js';
+import { run } from '../core/setup-client.js';
+import { forgetSetupState } from './setup.js';
 
 const LABELS = {
   bgMode: { shader: 'Itemzflow (default)', plain: 'Plain dark', image: 'Custom image' },
@@ -64,7 +67,8 @@ const ROWS = () => [
   { id: 'profile', type: 'profile', title: 'Console profile', sim: true, desc: 'PS4 and PS5 are separate profiles: each keeps its own appearance and interface settings, favourites, background image and selected console. Your name, avatar colour and online status are shared unless you turn on separate profiles on the Profile page.' },
   { id: 'consoles', type: 'action', title: 'Manage consoles…', desc: 'Connection, firmware, homebrew status and compatibility of each console, and which one is active.', run: (panel) => panel.app.goto('consoles') },
   { group: 'System' },
-  { id: 'resetAll', type: 'action', title: 'Reset all settings', desc: 'Restores every option, colour, background and profile setting to the defaults.', run: resetEverything },
+  { id: 'setup', type: 'action', title: 'Install, backups & recovery…', desc: 'Install or update VantaFlow, back up and restore your settings, recover from an interrupted installation, and clean up temporary files.', run: (panel) => { forgetSetupState(); panel.app.goto('setup'); } },
+  { id: 'resetAll', type: 'action', title: 'Reset all settings', desc: 'Restores every option, colour, background and profile setting to the defaults. With the desktop agent running, your settings are backed up first.', run: resetEverything },
 ];
 
 function display(r) {
@@ -164,11 +168,24 @@ function resetAppearance() {
 }
 
 async function resetEverything() {
-  if (await confirmDialog({ title: 'Reset all settings', message: 'Restore every option, colour, background and profile setting to the defaults?', confirm: 'Reset', sim: false })) {
-    pending = null;
-    resetAll();
-    toast('Settings reset', 'All defaults restored.', 'success');
+  const agent = agentAvailable();
+  if (!await confirmSheet({
+    title: 'Reset all settings', destructive: true, confirm: 'Reset',
+    rows: [
+      ['What happens', 'Every option, colour, background and profile setting goes back to the default.'],
+      ['Affected', 'All VantaFlow settings in this browser: both console profiles, your account, backgrounds, favourites.'],
+      ['Your data', 'Settings are replaced by the defaults. Saved consoles and installed files are not touched.'],
+      ['Backup', agent ? 'Yes: your current settings are backed up first.' : 'No: the desktop agent is not running, so no backup can be made.'],
+      ['Can be undone', agent ? 'Yes: restore the backup in Install, backups & recovery.' : 'No.'],
+    ],
+  })) return;
+  if (agent) {
+    const r = await run('backup', { settings: snapshot(), description: 'Before resetting all settings', reason: 'before-reset' });
+    if (r.state !== 'done') { toast('Not reset', `The backup failed, so nothing was changed: ${r.error?.message ?? ''}`, 'warn'); return; }
   }
+  pending = null;
+  resetAll();
+  toast('Settings reset', agent ? 'All defaults restored. Your previous settings are in a backup.' : 'All defaults restored.', 'success');
 }
 
 function preview(r, panel) {

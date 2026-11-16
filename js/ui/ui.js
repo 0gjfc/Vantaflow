@@ -204,6 +204,76 @@ export function choiceDialog({ title, message = '', options }) {
   });
 }
 
+// Confirmation screen for installs, replacements, removals and recovery: what happens, what is
+// affected, whether data could change, whether a backup is made, whether it can be undone.
+// Destructive actions start on Cancel and need ✕ twice on the confirm button ("armed").
+// rows: [[label, text | string[]]]. Resolves to true only on explicit confirmation.
+export function confirmSheet({ title, summary = '', rows = [], warnings = [], confirm = 'Confirm', destructive = false, tagKind = null }) {
+  return new Promise((resolve) => {
+    const el = document.getElementById('dialog');
+    const list = (v) => (Array.isArray(v)
+      ? `<ul class="plain small">${v.slice(0, 5).map((x) => `<li>${esc(x)}</li>`).join('')}${v.length > 5 ? `<li class="more">and ${v.length - 5} more</li>` : ''}${v.length ? '' : '<li>none</li>'}</ul>`
+      : esc(v));
+    const state = { el, sel: destructive ? 0 : 1, armed: false, resolve };
+    state.render = () => {
+      const label = state.armed ? `Press ✕ again to ${confirm.toLowerCase()}` : confirm;
+      el.innerHTML = `<div class="dialog-box sheet${destructive ? ' destructive' : ''}"><h2>${esc(title)}${tagKind ? ` ${tag(tagKind)}` : ''}</h2>
+        <div class="sheet-body">${summary ? `<p>${esc(summary)}</p>` : ''}
+        ${warnings.length ? `<ul class="sheet-warn">${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+        <dl class="sheet-kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${list(v)}</dd>`).join('')}</dl></div>
+        <div class="dialog-btns"><button data-i="0" class="${state.sel === 0 ? 'sel' : ''}">Cancel</button><button data-i="1" class="${state.sel === 1 ? 'sel' : ''}${destructive ? ' danger' : ''}${state.armed ? ' armed' : ''}">${esc(label)}</button></div></div>`;
+    };
+    state.onCross = () => {
+      if (state.sel === 0) { close(false); return; }
+      if (destructive && !state.armed) { state.armed = true; state.render(); blip(); return; }
+      close(true);
+    };
+    state.onMove = () => { state.armed = false; };
+    dialog = state;
+    el.onclick = (e) => {
+      const b = e.target.closest('[data-i]');
+      if (!b) return;
+      if (state.sel !== Number(b.dataset.i)) { state.sel = Number(b.dataset.i); state.armed = false; }
+      state.onCross();
+    };
+    state.render();
+    el.hidden = false;
+  });
+}
+
+// Progress of a running operation. Input is ignored while it runs (nothing can be started or
+// cancelled halfway); close() hides it.
+export function progressDialog(title) {
+  const el = document.getElementById('dialog');
+  dialog = { el, locked: true, resolve: () => {} };
+  el.onclick = null;
+  const render = (p = {}) => {
+    const pct = p.fraction != null ? Math.round(p.fraction * 100) : p.of ? Math.round((p.step / p.of) * 100) : 0;
+    el.innerHTML = `<div class="dialog-box progress-box"><h2>${esc(title)}</h2>
+      <p>${esc(p.label ?? 'Starting…')}${p.of ? ` <span class="step">(step ${p.step + 1} of ${p.of})</span>` : ''}</p>
+      <div class="bar"><i style="width:${pct}%"></i></div><p class="note">Please wait. Do not close VantaFlow while this runs.</p></div>`;
+  };
+  render();
+  el.hidden = false;
+  return {
+    update: render,
+    close() { if (dialog?.locked) { dialog = null; el.hidden = true; } },
+  };
+}
+
+// A result the user must acknowledge (success or failure of an operation).
+export function infoDialog({ title, message, lines = [], ok = 'OK', kind = 'info' }) {
+  return new Promise((resolve) => {
+    const el = document.getElementById('dialog');
+    el.innerHTML = `<div class="dialog-box sheet result-${kind}"><h2>${icon(kind === 'success' ? 'check' : kind === 'warn' ? 'warn' : 'info')}${esc(title)}</h2>
+      <p>${esc(message)}</p>${lines.length ? `<ul class="plain small">${lines.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      <div class="dialog-btns"><button data-i="0" class="sel">${esc(ok)}</button></div></div>`;
+    dialog = { el, sel: 0, resolve: () => resolve(true), onCross: () => close(true), render: () => {} };
+    el.onclick = (e) => { if (e.target.closest('[data-i]')) close(true); };
+    el.hidden = false;
+  });
+}
+
 function close(ok) {
   const d = dialog;
   dialog = null;
@@ -216,6 +286,18 @@ function close(ok) {
 // Returns true when a dialog consumed the action.
 export function dialogHandle(action) {
   if (!dialog) return false;
+  if (dialog.locked) return true; // an operation is running
+  if (dialog.onCross && !dialog.list) {
+    if (action === 'cross') dialog.onCross();
+    else if (action === 'circle') close(false);
+    else if ((action === 'left' || action === 'right') && dialog.render) {
+      dialog.sel = action === 'left' ? 0 : 1;
+      dialog.onMove?.();
+      dialog.render();
+      blip();
+    }
+    return true;
+  }
   if (dialog.list && (action === 'up' || action === 'down')) {
     dialog.sel = Math.max(0, Math.min(dialog.list - 1, dialog.sel + (action === 'up' ? -1 : 1)));
     dialog.render();

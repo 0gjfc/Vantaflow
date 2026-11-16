@@ -19,7 +19,7 @@ const CLICKABLE = new Set(['cross', 'circle', 'square', 'triangle', 'options']);
 
 // ←/→ in the nav bar and L1/R1 visit: profile, the 11 main sections, the homebrew enabler of
 // the active console only (GoldHEN on PS4, etaHEN on PS5), then the console status (Consoles).
-const order = () => SECTIONS.filter((s) => !s.platform || s.platform === activeProfile()).map((s) => s.id);
+const order = () => SECTIONS.filter((s) => (!s.platform || s.platform === activeProfile()) && s.slot !== 'settings').map((s) => s.id);
 
 let current = 'games';
 let focus = 'content'; // 'content' | 'nav'
@@ -80,7 +80,8 @@ function refreshChrome() {
   const badge = $('.nav-btn[data-id="notifications"] .badge');
   badge.textContent = unread || '';
   badge.hidden = !unread;
-  document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.id === current));
+  const lit = byId[current].slot === 'settings' ? 'settings' : current; // Install & Recovery lives under Settings
+  document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.id === lit));
 }
 
 function tickClock() {
@@ -116,7 +117,8 @@ export function dispatch(action) {
   if (splashHandle() || dialogHandle(action)) return;
   if (action === 'l1' || action === 'r1') {
     const ids = order();
-    goto(ids[mod(ids.indexOf(current) + (action === 'l1' ? -1 : 1), ids.length)]);
+    const at = ids.indexOf(byId[current].slot === 'settings' ? 'settings' : current);
+    goto(ids[mod(at + (action === 'l1' ? -1 : 1), ids.length)]);
     blip();
     return;
   }

@@ -15,6 +15,8 @@ import { createPs4Provider } from './agent/providers/ps4.mjs';
 import { createPs5Provider } from './agent/providers/ps5.mjs';
 import { discover, validateAddress, broadcastTargets } from './agent/discovery.mjs';
 import { DDP } from './agent/ddp.mjs';
+import { handleSetup } from './setup/api.mjs';
+import { dataDir as dataDirPath } from './setup/store.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const env = process.env;
@@ -31,11 +33,12 @@ const providers = { ps4: createPs4Provider({ port: ports.ps4, timeoutMs }), ps5:
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.md': 'text/plain; charset=utf-8' };
 const json = (res, status, body) => { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
 
-function readBody(req) {
+// Small bodies for detection; settings snapshots for backups can hold custom background images.
+function readBody(req, limit = 4096) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
-    req.on('data', (c) => { size += c.length; if (size > 4096) { reject(new Error('too large')); req.destroy(); } else chunks.push(c); });
+    req.on('data', (c) => { size += c.length; if (size > limit) { reject(new Error('too large')); req.destroy(); } else chunks.push(c); });
     req.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')); } catch { reject(new Error('invalid JSON')); } });
   });
 }
@@ -48,7 +51,12 @@ async function probe(address, generation) {
 
 async function api(req, res, url) {
   if (url.pathname === '/api/agent' && req.method === 'GET') {
-    return json(res, 200, { agent: 'vantaflow-desktop', readOnly: true, providers: Object.values(providers).map((p) => ({ name: p.name, generation: p.generation, method: p.method })), test: TEST });
+    return json(res, 200, { agent: 'vantaflow-desktop', readOnly: true, setup: true, providers: Object.values(providers).map((p) => ({ name: p.name, generation: p.generation, method: p.method })), test: TEST });
+  }
+  if (url.pathname.startsWith('/api/setup/')) {
+    let body = {};
+    if (req.method === 'POST') { try { body = await readBody(req, 32 * 1024 * 1024); } catch (e) { return json(res, 400, { error: e.message }); } }
+    try { return json(res, 200, await handleSetup(req, url, body)); } catch (e) { return json(res, e.status ?? 400, { error: e.message, code: e.code ?? 'failed', problems: e.problems }); }
   }
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
   let body;
@@ -86,4 +94,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`VantaFlow running at http://127.0.0.1:${PORT}${TEST ? '  (TEST MODE: fake consoles on 127.0.0.1 allowed)' : ''}`);
   console.log('Console detection is read-only and stays on your local network.');
+  console.log(`Install, backups and recovery use ${dataDirPath()} (set VANTAFLOW_DATA_DIR to change it).`);
 });

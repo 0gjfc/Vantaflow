@@ -1,0 +1,23 @@
+{
+  "note": "Identity of VantaFlow's own packages. The installers accept only these: VantaFlow installs VantaFlow, nothing else. See docs/installation.md.",
+  "desktop": {
+    "id": "app.vantaflow.desktop",
+    "name": "VantaFlow desktop",
+    "extension": ".vfpkg",
+    "formatVersion": 1,
+    "requiredFiles": ["index.html", "js/main.js", "desktop/server.mjs"],
+    "minNodeMajor": 18
+  },
+  "android": {
+    "packageName": "app.vantaflow.companion",
+    "name": "VantaFlow companion",
+    "minSdk": 26
+  },
+  "ps4": {
+    "name": "VantaFlow (PS4)",
+    "titleId": "VNTF00001",
+    "contentId": "IV0000-VNTF00001_00-VANTAFLOWPS40000",
+    "exists": false,
+    "existsNote": "No VantaFlow PS4 package has been built yet. The PS4 workflow is tested only with mock packages that carry this content ID."
+  }
+}
